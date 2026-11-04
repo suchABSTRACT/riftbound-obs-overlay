@@ -103,6 +103,11 @@ jobs:
       - name: Build patch zip + update manifest
         run: |
           npm run build:patch
+          # The version stamp makes every lock file look new to installed
+          # updaters, which then attempt a native rebuild. Dependency changes
+          # ship as full installers (FORCE_FULL), so patches leave the lock out.
+          zip -d "dist/riftbound-obs-patch-${VERSION}.zip" package-lock.json || true
+          unzip -l "dist/riftbound-obs-patch-${VERSION}.zip" | tail -1
           RELEASE_NOTES="Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}" node scripts/generate-manifest.mjs
           ls -la dist
 

@@ -27,6 +27,22 @@ import {
   writeApplyStatus,
 } from "./update-utils.js";
 
+/**
+ * Dependency fingerprint of a package-lock: the lock minus the app's own
+ * version stamp, so a version bump alone doesn't count as "dependencies changed".
+ */
+function lockFingerprint(text) {
+  if (!text) return "";
+  try {
+    const lock = JSON.parse(text);
+    delete lock.version;
+    if (lock.packages?.[""]) delete lock.packages[""].version;
+    return JSON.stringify(lock);
+  } catch {
+    return text;
+  }
+}
+
 function normalizePath(p) {
   if (!p || typeof p !== "string") return process.cwd();
   return p.replace(/^["']+|["']+$/g, "").replace(/[\\/]+$/, "");
@@ -292,7 +308,7 @@ export async function runPatchApply() {
       : null;
     const newLockPath = join(extractDir, "package-lock.json");
     const newLock = existsSync(newLockPath) ? readFileSync(newLockPath, "utf8") : null;
-    const depsChanged = Boolean(newLock && newLock !== oldLock);
+    const depsChanged = Boolean(newLock && lockFingerprint(newLock) !== lockFingerprint(oldLock));
 
     const stagingRoot = prepareStaging(extractDir, installRoot);
 
@@ -320,8 +336,10 @@ export async function runPatchApply() {
           log("Dependencies changed — running npm ci…");
           runNpmCi(installRoot, contentRoot);
         } else if (process.env.RIFTBOUND_ELECTRON === "1") {
-          runElectronNpmCi(contentRoot);
-          runElectronRebuild(contentRoot);
+          // Rebuilding native modules needs build tools users don't have and
+          // can leave them broken. Releases that change dependencies are
+          // published as full-installer updates instead, so skip it here.
+          log("Dependencies changed — skipped for the desktop app (dependency changes ship as full installer updates).");
         } else {
           log("Dependencies changed — skip npm ci (use full installer if modules are missing).");
         }
