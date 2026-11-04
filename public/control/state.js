@@ -31,10 +31,29 @@ function notify(info) {
 export function startStateSocket() {
   connectState((state, info) => {
     if (!data) return;
+    // Format changed elsewhere: the local games array is stale, refetch everything.
+    if (
+      (state.match.format && state.match.format !== data.match.format) ||
+      (state.match.gameCount && state.match.gameCount !== data.match.games.length)
+    ) {
+      reloadData()
+        .then(() => notify({ type: "state", sections: [], selectionChanged: true }))
+        .catch(() => {});
+      return;
+    }
     data.match.score = state.match.score;
+    const prevGame = data.match.currentGame;
     data.match.currentGame = state.match.currentGame;
     const g = data.match.games[state.match.currentGame];
     if (g && state.game?.score) g.score = { p1: state.game.score.p1, p2: state.game.score.p2 };
+    // Keep the live game's battlefield / champion picks in sync (Stream Deck, hotkeys…).
+    let selectionChanged = prevGame !== data.match.currentGame;
+    if (g && state.game?.selection) {
+      const before = JSON.stringify([g.battlefield, g.champion]);
+      g.battlefield = { ...state.game.selection.battlefield };
+      g.champion = { ...state.game.selection.champion };
+      if (before !== JSON.stringify([g.battlefield, g.champion])) selectionChanged = true;
+    }
     data.display = data.display || {};
     data.display.mode = state.display.mode;
     if (state.display.cardAnimation) data.display.cardAnimation = state.display.cardAnimation;
@@ -45,7 +64,7 @@ export function startStateSocket() {
         p2: state.display.cards.p2?.id ?? null,
       };
     }
-    notify(info);
+    notify({ ...(info || {}), selectionChanged });
   });
 }
 

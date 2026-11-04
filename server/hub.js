@@ -61,6 +61,11 @@ export function buildStateSections() {
         p1: game.score?.p1 || 0,
         p2: game.score?.p2 || 0,
       },
+      // Raw card ids for the control panel (independent of the image cache).
+      selection: {
+        battlefield: { p1: game.battlefield?.p1 ?? null, p2: game.battlefield?.p2 ?? null },
+        champion: { p1: game.champion?.p1 ?? null, p2: game.champion?.p2 ?? null },
+      },
       pokemon: {
         p1: pokemonSide(game.pokemon?.p1),
         p2: pokemonSide(game.pokemon?.p2),

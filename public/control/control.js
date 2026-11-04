@@ -494,10 +494,11 @@ function renderGameButtons() {
 
 function renderSelections() {
   const grid = document.getElementById("selection-grid");
-  if (!grid || isPokemonMode()) {
-    if (grid) grid.innerHTML = "";
-    return;
-  }
+  if (!grid) return;
+  // Always clear first: without this every redraw stacked two more blocks
+  // (still wired to the old game), so picks went to the wrong game.
+  grid.innerHTML = "";
+  if (isPokemonMode()) return;
   const gi = data.match.currentGame;
   const game = data.match.games[gi];
 
@@ -528,12 +529,15 @@ function renderSelections() {
   grid.querySelectorAll("[data-sel]").forEach((sel) => {
     sel.addEventListener("change", async () => {
       const [pid, slot] = sel.dataset.sel.split(":");
+      // Write to the game that is live now (it may have changed from the Stream Deck).
+      const target = data.match.currentGame;
       await api("/api/match/selection", {
         method: "POST",
-        body: { gameIndex: gi, player: pid, slot, cardId: sel.value || null },
+        body: { gameIndex: target, player: pid, slot, cardId: sel.value || null },
       });
-      data.match.games[gi][slot][pid] = sel.value || null;
-      toast("Selection shown on screen");
+      data.match.games[target][slot][pid] = sel.value || null;
+      if (target !== gi) renderSelections();
+      toast(`Game ${target + 1}: selection shown on screen`);
     });
   });
 }
@@ -1309,6 +1313,9 @@ subscribeData((nextData, info = { type: "state", sections: [] }) => {
     updateScoreValues();
     renderGameButtons();
     renderPokemonBoard();
+    if (info.selectionChanged && !document.getElementById("selection-grid")?.contains(document.activeElement)) {
+      renderSelections();
+    }
   }
 });
 

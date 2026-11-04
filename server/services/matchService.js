@@ -8,6 +8,26 @@ function currentGame(match) {
   return match.games[match.currentGame];
 }
 
+/**
+ * Pre-fill the live game's champion from the previous game (or the deck's
+ * champion) when none is picked yet. It stays editable per game, e.g. after
+ * sideboarding, and never overwrites a pick.
+ */
+function prefillChampion(gameData) {
+  if (getActiveGameId() === "pokemon") return;
+  const match = gameData.match;
+  const i = match.currentGame;
+  const game = match.games[i];
+  if (!game) return;
+  game.champion ||= { p1: null, p2: null };
+  for (const pid of PLAYER_IDS) {
+    if (game.champion[pid]) continue;
+    const prev = i > 0 ? match.games[i - 1]?.champion?.[pid] : null;
+    const deckChamp = (gameData.players || []).find((p) => p.id === pid)?.deck?.champions?.[0] || null;
+    game.champion[pid] = prev || deckChamp;
+  }
+}
+
 function ensurePokemonBoard(game) {
   game.pokemon ||= {};
   for (const pid of PLAYER_IDS) {
@@ -25,6 +45,7 @@ function ensurePokemonBoard(game) {
 export async function resetMatch() {
   const gameData = activeGameData();
   gameData.match = defaultMatch(gameData.match.format);
+  prefillChampion(gameData);
   gameData.display = defaultDisplay();
   await persistAndBroadcast(["match", "game", "display"]);
   return gameData.match;
@@ -62,6 +83,7 @@ export async function winGame(player) {
     match.score[player] = (match.score[player] || 0) + 1;
     const played = match.score.p1 + match.score.p2;
     match.currentGame = Math.min(played, match.games.length - 1);
+    prefillChampion(activeGameData());
   }
   await persistAndBroadcast(["match", "game"]);
   return match;
@@ -72,6 +94,7 @@ export async function updateMatch({ score, currentGame: currentGameIndex } = {})
   if (typeof currentGameIndex === "number") {
     const max = match.games.length - 1;
     match.currentGame = Math.max(0, Math.min(max, currentGameIndex));
+    prefillChampion(activeGameData());
   }
   if (score) {
     const game = currentGame(match);
