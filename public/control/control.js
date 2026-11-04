@@ -1717,7 +1717,15 @@ async function pollAfterUpdate(expectedVersion) {
 }
 
 updateApplyBtn?.addEventListener("click", async () => {
-  if (!confirm("Install the update and restart the app? The control panel will close briefly.")) return;
+  const full = updateState?.downloaded?.mode === "installer";
+  if (
+    !confirm(
+      full
+        ? "Install the update now?\n\nRiftbound OBS will close, the installer runs silently, then the app reopens (usually under a minute)."
+        : "Install the update now?\n\nRiftbound OBS will close for 10–30 seconds. A small \"Updating Riftbound OBS\" window shows the progress, then the app reopens."
+    )
+  )
+    return;
   updateApplyBtn.disabled = true;
   updateDetail.textContent = "Running preflight checks…";
   try {

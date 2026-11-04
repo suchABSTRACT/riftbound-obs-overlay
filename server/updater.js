@@ -607,6 +607,27 @@ export async function prepareApplyUpdate(applyTokenFromClient) {
   };
 }
 
+/**
+ * Open the "Updating Riftbound OBS" window (desktop app builds that support it),
+ * so there is something on screen while the app is closed. Patch updates only:
+ * a full installer replaces the .exe, which must not be running.
+ */
+function showUpdateProgressWindow(expectedVersion, mode) {
+  if (process.env.RIFTBOUND_PROGRESS_UI !== "1" || mode === "installer") return;
+  try {
+    const env = { ...process.env };
+    delete env.ELECTRON_RUN_AS_NODE;
+    const port = process.env.PORT || "7474";
+    spawn(process.execPath, ["--update-progress", `--version=${expectedVersion}`, `--port=${port}`], {
+      detached: true,
+      stdio: "ignore",
+      env,
+    }).unref();
+  } catch {
+    /* the update still runs without the window */
+  }
+}
+
 /** Runs after the HTTP apply response is sent — avoids server.close() deadlock. */
 export async function runApplyShutdownAfterResponse(prepared) {
   const { installRoot, expectedVersion, mode } = prepared;
@@ -619,6 +640,7 @@ export async function runApplyShutdownAfterResponse(prepared) {
       error: null,
     });
 
+    showUpdateProgressWindow(expectedVersion, mode);
     await shutdownForUpdate();
     await sleep(2000);
     clearAppPid();

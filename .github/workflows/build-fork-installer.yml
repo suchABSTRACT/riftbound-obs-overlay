@@ -69,6 +69,24 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Patches only carry server/ + public/. If the Electron shell, the updater
+      # bootstrap or dependencies changed since the last release, mark this one
+      # "full installer" so installed apps fetch the setup instead.
+      - name: Decide patch vs full update
+        run: |
+          git fetch --tags --force
+          PREV=$(git tag -l 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$PREV" ]; then
+            echo "FORCE_FULL=1" >> "$GITHUB_ENV"; echo "No previous release: full"
+          elif git diff --name-only "$PREV" HEAD -- electron package-lock.json | grep -q .; then
+            echo "FORCE_FULL=1" >> "$GITHUB_ENV"; echo "Shell/deps changed since $PREV: full"
+            git diff --name-only "$PREV" HEAD -- electron package-lock.json
+          else
+            echo "FORCE_FULL=0" >> "$GITHUB_ENV"; echo "Patch is enough since $PREV"
+          fi
 
       - uses: actions/setup-node@v4
         with:

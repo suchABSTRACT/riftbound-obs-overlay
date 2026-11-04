@@ -3,6 +3,13 @@ const path = require("path");
 const fs = require("fs");
 const os = require("os");
 
+// Progress window shown while an update is applied (see update-progress.cjs).
+// Runs instead of the app: no server, no tray, no single-instance lock.
+if (process.argv.includes("--update-progress")) {
+  require("./update-progress.cjs").run();
+  return;
+}
+
 function startupLogPath() {
   const appData = process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming");
   return path.join(appData, "RiftboundOBS", "startup.log");
@@ -27,6 +34,8 @@ logStartup("Electron main starting");
 app.disableHardwareAcceleration();
 
 process.env.RIFTBOUND_ELECTRON = "1";
+// Tells the server this build can show the update progress window.
+process.env.RIFTBOUND_PROGRESS_UI = "1";
 if (!app.isPackaged) {
   process.env.RIFTBOUND_DEV = "1";
 }

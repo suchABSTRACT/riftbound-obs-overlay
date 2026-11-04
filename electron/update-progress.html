@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+    <title>Updating Riftbound OBS</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 20px 22px;
+        background: #0b1230;
+        color: #f2f4fa;
+        font: 14px "Segoe UI", system-ui, sans-serif;
+        user-select: none;
+      }
+      h1 { margin: 0 0 4px; font-size: 17px; font-weight: 600; }
+      .sub { color: #aab3d1; font-size: 12.5px; min-height: 18px; }
+      .bar { margin: 16px 0 12px; height: 8px; background: #1a2350; border-radius: 4px; overflow: hidden; }
+      .fill { height: 100%; width: 4%; background: #d8b56a; border-radius: 4px; transition: width 0.4s ease; }
+      .fill.failed { background: #e2574c; }
+      ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      li { font-size: 12px; color: #6f79a0; display: flex; align-items: center; gap: 6px; }
+      li i { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid currentColor; flex: none; }
+      li.active { color: #f2f4fa; }
+      li.active i { border-color: #d8b56a; background: #d8b56a; animation: pulse 1s ease-in-out infinite alternate; }
+      li.done { color: #9fd3b0; }
+      li.done i { background: #3fb964; border-color: #3fb964; }
+      @keyframes pulse { from { opacity: 0.45; } to { opacity: 1; } }
+      .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; font-size: 12px; color: #8a93b3; }
+      .actions { display: none; gap: 8px; }
+      .actions.show { display: flex; }
+      a.btn { white-space: nowrap; color: #f2f4fa; text-decoration: none; border: 1px solid #3a4778; border-radius: 6px; padding: 5px 12px; font-size: 12.5px; }
+      a.btn:hover { background: #1a2350; }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Updating Riftbound OBS</h1>
+    <div class="sub" id="msg">Closing Riftbound OBS…</div>
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <ol id="steps">
+      <li><i></i>Closing app</li>
+      <li><i></i>Unpacking</li>
+      <li><i></i>Installing</li>
+      <li><i></i>Reopening</li>
+    </ol>
+    <div class="foot">
+      <span id="time">0:00 elapsed · usually 10–30 seconds</span>
+      <span class="actions" id="actions">
+        <a class="btn" href="rb-action:log">Open log folder</a>
+        <a class="btn" href="rb-action:close">Close</a>
+      </span>
+    </div>
+    <script>
+      const v = new URLSearchParams(location.search).get("v");
+      if (v) document.getElementById("title").textContent = `Updating Riftbound OBS to v${v}`;
+      const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+      window.render = (view) => {
+        const fill = document.getElementById("fill");
+        const steps = [...document.querySelectorAll("#steps li")];
+        const time = document.getElementById("time");
+        const actions = document.getElementById("actions");
+        if (view.state === "failed") {
+          document.getElementById("title").textContent = "Update failed";
+          document.getElementById("msg").textContent = view.message;
+          fill.classList.add("failed");
+          actions.classList.add("show");
+          time.textContent = `Stopped after ${fmt(view.elapsed)} · your previous version is kept`;
+          return;
+        }
+        fill.style.width = `${view.pct}%`;
+        steps.forEach((li, i) => {
+          li.className = i < view.step || view.state === "done" ? "done" : i === view.step ? "active" : "";
+        });
+        document.getElementById("msg").textContent = view.message || "";
+        if (view.state === "done") {
+          document.getElementById("title").textContent = "Update complete";
+          time.textContent = `Done in ${fmt(view.elapsed)}`;
+          return;
+        }
+        if (view.state === "slow") {
+          time.textContent = `${fmt(view.elapsed)} elapsed · taking longer than usual`;
+          actions.classList.add("show");
+        } else {
+          time.textContent = `${fmt(view.elapsed)} elapsed · usually 10–30 seconds`;
+        }
+      };
+    </script>
+  </body>
+</html>

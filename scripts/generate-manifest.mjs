@@ -21,7 +21,9 @@ const manifest = {
   releasedAt: new Date().toISOString(),
   notes: process.env.RELEASE_NOTES || `Release v${version}`,
   nodeVersion: NODE_VERSION,
-  forceFull: false,
+  // Set by CI when the Electron shell or native dependencies changed: those
+  // live outside the patch, so the app must take the full installer.
+  forceFull: process.env.FORCE_FULL === "1",
   minPatchFrom: "0.1.0",
   patch: {
     file: `riftbound-obs-patch-${version}.zip`,
