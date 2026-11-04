@@ -97,9 +97,13 @@ export async function startServer(options = {}) {
     if (typeof server.closeAllConnections === "function") {
       server.closeAllConnections();
     }
-    await new Promise((resolve, reject) => {
-      server.close((err) => (err ? reject(err) : resolve()));
-    });
+    // Never let a lingering connection block shutdown (and so an update).
+    await Promise.race([
+      new Promise((resolve, reject) => {
+        server.close((err) => (err ? reject(err) : resolve()));
+      }),
+      new Promise((resolve) => setTimeout(resolve, 3000)),
+    ]);
   };
 
   writeAppPid();

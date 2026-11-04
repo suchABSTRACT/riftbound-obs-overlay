@@ -113,6 +113,16 @@ export function initHub(server) {
 
 export function closeHub() {
   if (wss) {
+    // ws doesn't drop open clients when it shares the HTTP server, and
+    // server.close() then waits for them forever (e.g. OBS's overlay source
+    // stays connected), which stalled updates on "Closing app".
+    for (const client of wss.clients) {
+      try {
+        client.terminate();
+      } catch {
+        /* ignore */
+      }
+    }
     wss.close();
     wss = null;
   }
