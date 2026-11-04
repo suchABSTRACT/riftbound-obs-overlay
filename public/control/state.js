@@ -54,7 +54,20 @@ export function startStateSocket() {
       g.champion = { ...state.game.selection.champion };
       if (before !== JSON.stringify([g.battlefield, g.champion])) selectionChanged = true;
     }
+    // Broadcast: first player + counters for the live game, round/clock/show, records.
+    if (g && state.game) {
+      if (state.game.stats) g.stats = { p1: { ...state.game.stats.p1 }, p2: { ...state.game.stats.p2 } };
+      if ("first" in state.game) g.first = state.game.first;
+    }
+    for (const sp of state.players || []) {
+      const p = data.players?.find((x) => x.id === sp.id);
+      if (p && typeof sp.record === "string") p.record = sp.record;
+    }
     data.display = data.display || {};
+    if (state.display?.broadcast) {
+      const t = { ...state.display.broadcast.timer };
+      data.display.broadcast = { ...state.display.broadcast, timer: t };
+    }
     data.display.mode = state.display.mode;
     if (state.display.cardAnimation) data.display.cardAnimation = state.display.cardAnimation;
     if (state.layout) data.layout = normalizeLayout(state.layout);

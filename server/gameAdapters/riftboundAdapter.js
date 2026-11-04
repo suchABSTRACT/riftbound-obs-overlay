@@ -2,6 +2,7 @@ export function makePlayer(id) {
   return {
     id,
     pseudo: "",
+    record: "",
     deck: {
       legend: null,
       champions: [],
@@ -77,6 +78,7 @@ export function buildOverlayPlayers(players = [], cardsCache = {}) {
   return players.map((p) => ({
     id: p.id,
     pseudo: p.pseudo,
+    record: p.record || "",
     legend: card(p.deck.legend),
     champion: card((p.deck.champions || [])[0]),
     battlefields: (p.deck.battlefields || []).map((e) => card(e.id)).filter(Boolean),

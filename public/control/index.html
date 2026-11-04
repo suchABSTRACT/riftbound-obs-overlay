@@ -101,6 +101,7 @@
             <button class="btn danger" id="hide-card">Hide all cards</button>
           </div>
         </div>
+        <div class="card-block" id="broadcast-block"></div>
       </section>
 
       <!-- ============ STREAM DECK ============ -->
@@ -143,6 +144,9 @@
         <div class="layout-toolbar">
           <button class="btn" id="save-layout">Save layout</button>
           <button class="btn ghost" id="reset-layout">Reset layout</button>
+          <span class="inline-lbl">Preset</span>
+          <button class="btn ghost" data-preset="classic" title="Side columns + framed camera">Classic</button>
+          <button class="btn ghost" data-preset="broadcast" title="Full-screen table cam with player panels, scoreboard and clock">Broadcast</button>
           <span class="hint">Card frames keep real aspect ratios (744×1039 / 1039×744). Overlay + CSS update live.</span>
         </div>
         <div class="layout-wrap">
@@ -157,6 +161,9 @@
             <div id="layout-props-body">
               <p class="hint">Select a block to edit it. The overlay preview updates live as you drag.</p>
             </div>
+            <h2>Blocks</h2>
+            <p class="hint">Tick to show a block; click a name to select it.</p>
+            <div id="layout-block-list" class="layout-block-list"></div>
             <h2 class="layout-css-title">Generated CSS</h2>
             <pre id="layout-css-out" class="layout-css-out"></pre>
           </aside>

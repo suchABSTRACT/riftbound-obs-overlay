@@ -66,6 +66,12 @@ export function buildStateSections() {
         p1: game.score?.p1 || 0,
         p2: game.score?.p2 || 0,
       },
+      // Broadcast overlay: first player + board counters for this game.
+      first: game.first || null,
+      stats: {
+        p1: { ...(game.stats?.p1 || {}) },
+        p2: { ...(game.stats?.p2 || {}) },
+      },
       // Raw card ids for the control panel (independent of the image cache).
       selection: {
         battlefield: { p1: game.battlefield?.p1 ?? null, p2: game.battlefield?.p2 ?? null },
@@ -87,6 +93,7 @@ export function buildStateSections() {
         p1: display.cardReveal?.p1 || 0,
         p2: display.cardReveal?.p2 || 0,
       },
+      broadcast: display.broadcast || null,
     },
     layout,
   };

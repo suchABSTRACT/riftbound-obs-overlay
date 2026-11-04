@@ -738,3 +738,141 @@ select:focus {
   color: #e8b84a;
   max-width: 720px;
 }
+
+/* ---- Broadcast card (Match tab) ---- */
+.bcx-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.bcx-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.bcx-field input {
+  text-transform: none;
+  letter-spacing: normal;
+}
+.bcx-round {
+  flex: 1 1 240px;
+}
+.bcx-clock {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bcx-clock-val {
+  min-width: 72px;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bcx-clock-val.over {
+  color: var(--danger);
+}
+.bcx-clock-set {
+  width: 72px !important;
+}
+.bcx-players {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 860px) {
+  .bcx-players {
+    grid-template-columns: 1fr;
+  }
+}
+.bcx-player {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.bcx-player-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bcx-player-head .btn.active {
+  background: #b8892c;
+  border-color: #e2bd62;
+  color: #1d1400;
+}
+.bcx-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px 14px;
+}
+.bcx-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.bcx-show {
+  margin-top: 14px;
+}
+.bcx-show summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+.bcx-show-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+#broadcast-block code {
+  font-size: 11px;
+  color: var(--accent);
+}
+
+/* ---- Layout tab: block list ---- */
+.layout-block-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow: auto;
+  margin-bottom: 14px;
+}
+.lbl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
+.lbl-row.active {
+  background: var(--panel-2);
+}
+.lbl-name {
+  flex: 1;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.layout-toolbar {
+  flex-wrap: wrap;
+}

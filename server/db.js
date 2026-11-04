@@ -10,11 +10,22 @@ function makePlayer(id, gameId = DEFAULT_GAME_ID) {
   return getGameAdapter(gameId).makePlayer(id);
 }
 
+/** Live board counters shown on the broadcast player panels (per game). */
+const STAT_KEYS = ["hand", "gold", "level", "runesReady", "runesTotal"];
+const MAX_RUNES = 12;
+
+function defaultStats() {
+  return { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 };
+}
+
 function makeGame() {
   return {
     battlefield: { p1: null, p2: null },
     champion: { p1: null, p2: null },
     score: { p1: 0, p2: 0 },
+    // Broadcast overlay: who goes first this game + board counters.
+    first: null,
+    stats: { p1: defaultStats(), p2: defaultStats() },
     pokemon: {
       p1: { active: null, bench: [] },
       p2: { active: null, bench: [] },
@@ -32,12 +43,26 @@ const FORMATS = {
 const CARD_ANIMATIONS = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
 const POKEMON_MAX_PRIZES = 6;
 
+const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "gold", "runes", "record", "points", "gamesWon", "timer"];
+
+/** Broadcast overlay settings that survive a match reset (round name, clock, what to show). */
+function defaultBroadcast() {
+  return {
+    roundLabel: "",
+    // Clock: `remaining` seconds when paused; while running, counts down from
+    // `remaining` since `startedAt` (ms epoch).
+    timer: { duration: 50 * 60, remaining: 50 * 60, startedAt: null },
+    show: Object.fromEntries(BROADCAST_SHOW_KEYS.map((k) => [k, true])),
+  };
+}
+
 function defaultDisplay() {
   return {
     mode: "persistent",
     cards: { p1: null, p2: null },
     cardAnimation: "pop",
     cardReveal: { p1: 0, p2: 0 },
+    broadcast: defaultBroadcast(),
   };
 }
 
@@ -114,7 +139,43 @@ function defaultLayout() {
     "p2.card": { x: 87.01404799883991, y: 63.1, width: 11, height: 27.3, visible: true },
     "p1.champion": { x: 2, y: 86.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#dce6f5" },
     "p2.champion": { x: 82, y: 62.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#dce6f5" },
+    // Broadcast blocks (hidden in the classic layout; see broadcastLayout()).
+    ...BROADCAST_BLOCKS_HIDDEN(),
   };
+}
+
+const BROADCAST_BLOCKS = {
+  "p1.panel": { x: 0.6, y: 1.2, width: 24, height: 11 },
+  "p2.panel": { x: 75.4, y: 1.2, width: 24, height: 11 },
+  scoreboard: { x: 29.5, y: 1, width: 41, height: 9.6 },
+  "p1.runes": { x: 0.6, y: 12.8, width: 16, height: 3.6 },
+  "p2.runes": { x: 83.4, y: 12.8, width: 16, height: 3.6 },
+};
+
+function BROADCAST_BLOCKS_HIDDEN() {
+  return Object.fromEntries(Object.entries(BROADCAST_BLOCKS).map(([k, v]) => [k, { ...v, visible: false }]));
+}
+
+/**
+ * Broadcast preset: full-screen table cam (no background scene), player panels
+ * in the top corners, scoreboard + clock top centre, rune tracks, and the
+ * on-demand cards as large spotlights in the bottom corners.
+ */
+function broadcastLayout() {
+  const layout = defaultLayout();
+  for (const cfg of Object.values(layout)) cfg.visible = false;
+  for (const [k, v] of Object.entries(BROADCAST_BLOCKS)) layout[k] = { ...v, visible: true };
+  const cardW = 16;
+  const cardH = slotHeight(cardW, CARD_PORTRAIT);
+  layout["p1.card"] = { x: 0.8, y: 98.5 - cardH, width: cardW, height: cardH, visible: true };
+  layout["p2.card"] = { x: 99.2 - cardW, y: 98.5 - cardH, width: cardW, height: cardH, visible: true };
+  return layout;
+}
+
+const LAYOUT_PRESETS = { classic: () => defaultLayout(), broadcast: () => broadcastLayout() };
+
+export function layoutPreset(name) {
+  return LAYOUT_PRESETS[name]?.() || null;
 }
 
 function defaultPokemonLayout() {
@@ -289,7 +350,21 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
     if (typeof display.cardReveal[pid] !== "number") display.cardReveal[pid] = 0;
   }
 
+  display.broadcast ||= defaultBroadcast();
+  const bc = display.broadcast;
+  if (typeof bc.roundLabel !== "string") bc.roundLabel = "";
+  if (!bc.timer || typeof bc.timer !== "object") bc.timer = defaultBroadcast().timer;
+  bc.show ||= {};
+  for (const k of BROADCAST_SHOW_KEYS) if (typeof bc.show[k] !== "boolean") bc.show[k] = true;
+
+  for (const p of gameData.players || []) {
+    if (typeof p.record !== "string") p.record = "";
+  }
+
   for (const g of match.games) {
+    if (g.first === undefined) g.first = null;
+    g.stats ||= {};
+    for (const pid of ["p1", "p2"]) g.stats[pid] = { ...defaultStats(), ...(g.stats[pid] || {}) };
     if (!g.score || typeof g.score !== "object") g.score = { p1: 0, p2: 0 };
     if (typeof g.score.p1 !== "number") g.score.p1 = 0;
     if (typeof g.score.p2 !== "number") g.score.p2 = 0;
@@ -377,6 +452,10 @@ export async function initDb() {
 }
 
 export {
+  STAT_KEYS,
+  MAX_RUNES,
+  BROADCAST_SHOW_KEYS,
+  defaultBroadcast,
   defaultLayout,
   defaultPokemonLayout,
   defaultMatch,

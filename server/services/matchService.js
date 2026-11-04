@@ -46,7 +46,10 @@ export async function resetMatch() {
   const gameData = activeGameData();
   gameData.match = defaultMatch(gameData.match.format);
   prefillChampion(gameData);
+  // Round name, clock and show-toggles belong to the event, not the match.
+  const broadcast = gameData.display?.broadcast;
   gameData.display = defaultDisplay();
+  if (broadcast) gameData.display.broadcast = broadcast;
   await persistAndBroadcast(["match", "game", "display"]);
   return gameData.match;
 }
@@ -63,6 +66,11 @@ export async function setMatchFormat(format) {
       battlefield: { p1: null, p2: null },
       champion: { p1: null, p2: null },
       score: { p1: 0, p2: 0 },
+      first: null,
+      stats: {
+        p1: { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 },
+        p2: { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 },
+      },
       pokemon: { p1: { active: null, bench: [] }, p2: { active: null, bench: [] } },
     });
   }

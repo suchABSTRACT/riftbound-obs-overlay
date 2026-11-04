@@ -10,8 +10,13 @@ export const SLOT_LABELS = {
   "p2.champion": "P2 · Champion",
   "p1.card": "P1 · Show card",
   "p2.card": "P2 · Show card",
-  playArea: "Play area (camera)",
+  playArea: "Play area (camera) — hide for full-screen cam",
   "match.tally": "Match tally (1–0)",
+  "p1.panel": "P1 · Player panel",
+  "p2.panel": "P2 · Player panel",
+  scoreboard: "Scoreboard + clock",
+  "p1.runes": "P1 · Rune track",
+  "p2.runes": "P2 · Rune track",
 };
 
 export const SLOT_LABELS_POKEMON = {

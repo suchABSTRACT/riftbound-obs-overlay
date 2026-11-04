@@ -7,6 +7,7 @@ import {
   slotDomId,
 } from "/shared/layout.js";
 import { mxBuild, mxIdentity, mxUpdate } from "./matchup-riftbound.js";
+import { PANEL_DEFS, updateClock } from "./broadcast-panels.js";
 
 const stage = document.getElementById("stage");
 const matchupEl = document.getElementById("matchup");
@@ -68,6 +69,7 @@ const SLOT_DEFS = {
   "p2.champion": { kind: "text", get: (s) => s.game.champion.p2?.name },
   "p1.card": { kind: "image", get: (s) => s.display.cards?.p1?.imageLocal },
   "p2.card": { kind: "image", get: (s) => s.display.cards?.p2?.imageLocal },
+  ...Object.fromEntries(Object.entries(PANEL_DEFS).map(([id, render]) => [id, { kind: "panel", render }])),
 };
 
 const els = {};
@@ -82,6 +84,8 @@ function applyLayoutCss(layout) {
 }
 
 function applySceneCutout(layout) {
+  // No play area = full-screen camera (broadcast preset): drop the background scene.
+  sceneEl?.classList.toggle("scene-off", layout?.playArea?.visible === false);
   const layers = document.querySelectorAll(".scene-layer");
   const active = updateSceneHoleMask(sceneHoleEl, layout?.playArea);
   layers.forEach((el) => {
@@ -118,6 +122,8 @@ function ensureSlot(id, kind) {
     els[id] = { el, span: inner.querySelector(".match-tally-score") };
   } else if (kind === "chrome") {
     els[id] = { el };
+  } else if (kind === "panel") {
+    els[id] = { el, html: "" };
   } else {
     const span = document.createElement("div");
     span.className = "slot-text";
@@ -435,6 +441,15 @@ function renderGameSlots(state, layout) {
       if (slot.span) slot.span.textContent = def.get(state) || "0 – 0";
     } else if (def.kind === "chrome") {
       slot.el.classList.toggle("hidden", !show);
+    } else if (def.kind === "panel") {
+      slot.el.classList.toggle("hidden", !show);
+      if (show) {
+        const html = def.render(state);
+        if (html !== slot.html) {
+          slot.el.innerHTML = html;
+          slot.html = html;
+        }
+      }
     } else if (def.kind === "text") {
       const value = def.get(state);
       const hasValue = value !== undefined && value !== null && value !== "";
@@ -459,6 +474,7 @@ function render(state, info = { type: "state", sections: [] }) {
     sections.has("match");
 
   if (sceneChanged) renderScene(state);
+  updateClock(state);
   renderPokemonOverlay(state);
 
   const layout = normalizeLayout(state.layout);

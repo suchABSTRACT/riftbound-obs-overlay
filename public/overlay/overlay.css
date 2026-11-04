@@ -1,5 +1,6 @@
 @import url("./overlay-theme-pokemon.css");
 @import url("./matchup-riftbound.css");
+@import url("./broadcast-panels.css");
 
 * {
   margin: 0;
@@ -627,4 +628,9 @@ body {
     0 0 0 1px rgba(160, 205, 255, 0.3),
     0 0 16px rgba(106, 166, 255, 0.24),
     0 0.4vh 1vh rgba(0, 0, 0, 0.6);
+}
+
+/* Broadcast preset: play area hidden → full-screen camera, no scene background */
+.scene.scene-off {
+  display: none;
 }

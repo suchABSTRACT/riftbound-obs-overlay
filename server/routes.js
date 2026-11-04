@@ -7,6 +7,7 @@ import { displayRoutes } from "./routes/displayRoutes.js";
 import { layoutRoutes } from "./routes/layoutRoutes.js";
 import { streamdeckRoutes } from "./routes/streamdeckRoutes.js";
 import { updateRoutes } from "./routes/updateRoutes.js";
+import { broadcastRoutes } from "./routes/broadcastRoutes.js";
 
 export const router = Router();
 
@@ -18,3 +19,4 @@ router.use(displayRoutes);
 router.use(layoutRoutes);
 router.use(streamdeckRoutes);
 router.use(updateRoutes);
+router.use(broadcastRoutes);

@@ -19,6 +19,7 @@ import {
 } from "./constants.js";
 import { clamp, cssEscape, escapeAttr, escapeHtml } from "./utils.js";
 import { reloadData, startStateSocket, subscribeData } from "./state.js";
+import { initBroadcast, renderBroadcast, update as updateBroadcast } from "./broadcast.js";
 
 function getSlotLabel(slotId) {
   const labels = isPokemonMode() ? SLOT_LABELS_POKEMON : SLOT_LABELS;
@@ -320,6 +321,7 @@ function renderMatch() {
   renderSelections();
   renderPokemonBoard();
   renderDisplay();
+  renderBroadcast();
 }
 
 function playerName(id) {
@@ -1214,6 +1216,7 @@ function selectSlot(slotId) {
 }
 
 function renderProps() {
+  renderBlockList();
   const body = document.getElementById("layout-props-body");
   if (!selectedSlot) {
     body.innerHTML = `<p class="hint">Select a block to edit it.</p>`;
@@ -1278,6 +1281,51 @@ document.getElementById("save-layout").addEventListener("click", async () => {
   }
 });
 
+document.querySelectorAll("[data-preset]").forEach((btn) =>
+  btn.addEventListener("click", async () => {
+    const name = btn.dataset.preset;
+    if (!confirm(`Switch to the ${btn.textContent} layout? Your current block positions will be replaced.`)) return;
+    try {
+      await api("/api/layout/preset", { method: "POST", body: { name } });
+      await reload();
+      buildLayoutEditor();
+      toast(`${btn.textContent} layout applied`);
+    } catch (err) {
+      toast("Error: " + err.message, "err");
+    }
+  })
+);
+
+function renderBlockList() {
+  const list = document.getElementById("layout-block-list");
+  if (!list || !data?.layout) return;
+  list.innerHTML = Object.entries(data.layout)
+    .filter(([id]) => !isPokemonInactiveLayoutSlot(id))
+    .map(
+      ([id, cfg]) => `
+      <div class="lbl-row${id === selectedSlot ? " active" : ""}">
+        <input type="checkbox" data-block-vis="${escapeAttr(id)}" ${cfg.visible !== false ? "checked" : ""} />
+        <button type="button" class="lbl-name" data-block-sel="${escapeAttr(id)}">${escapeHtml(getSlotLabel(id))}</button>
+      </div>`
+    )
+    .join("");
+}
+
+document.getElementById("layout-block-list")?.addEventListener("change", (e) => {
+  const id = e.target.dataset?.blockVis;
+  if (!id || !data.layout[id]) return;
+  data.layout[id].visible = e.target.checked;
+  const el = layoutHandlesEl()?.querySelector(slotSelector(id));
+  if (el) positionSlot(el, data.layout[id]);
+  applyLayoutChange(id);
+  if (selectedSlot === id) renderProps();
+});
+document.getElementById("layout-block-list")?.addEventListener("click", (e) => {
+  const id = e.target.closest("[data-block-sel]")?.dataset.blockSel;
+  if (!id) return;
+  selectSlot(id);
+});
+
 document.getElementById("reset-layout").addEventListener("click", async () => {
   await api("/api/layout/reset", { method: "POST" });
   await reload();
@@ -1317,9 +1365,13 @@ subscribeData((nextData, info = { type: "state", sections: [] }) => {
       renderSelections();
     }
   }
+  if (isFull || sections.has("game") || sections.has("display") || sections.has("players") || sections.has("match")) {
+    updateBroadcast();
+  }
 });
 
 startStateSocket();
+initBroadcast({ toast });
 
 reload()
   .then(() => buildLayoutEditor())

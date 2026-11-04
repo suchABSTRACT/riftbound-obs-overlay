@@ -1,0 +1,401 @@
+/* =============================================================================
+   Broadcast blocks: player panels, scoreboard, rune tracks.
+   Every size is in container units (cqh / cqw) of the slot box, so resizing a
+   block in the Layout tab scales its content.
+   ============================================================================= */
+
+.slot-panel {
+  overflow: visible !important;
+  container-type: size;
+  pointer-events: none;
+  z-index: 20;
+  --b-gold: #e2bd62;
+  --b-gold-soft: rgba(226, 189, 98, 0.6);
+  --b-ink: #070b26;
+  --b-p1: #2f5bd8;
+  --b-p1-deep: #0f1d5c;
+  --b-p2: #c2384f;
+  --b-p2-deep: #4a0d1d;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: #fff;
+}
+.slot-panel > * {
+  width: 100%;
+  height: 100%;
+}
+.slot-panel svg {
+  fill: currentColor;
+  flex: none;
+}
+
+/* ---- player panel ------------------------------------------------------------- */
+
+.bp {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 2cqh;
+  padding: 4cqh;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 40%),
+    linear-gradient(90deg, rgba(10, 16, 52, 0.94), rgba(16, 26, 80, 0.88));
+  border: max(1px, 1.6cqh) solid var(--b-gold-soft);
+  border-radius: 6cqh;
+  box-shadow: 0 0 6cqh rgba(0, 0, 0, 0.55), inset 0 0 8cqh rgba(61, 123, 255, 0.18);
+  overflow: hidden;
+}
+.bp-p2 {
+  flex-direction: row-reverse;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 40%),
+    linear-gradient(270deg, rgba(10, 16, 52, 0.94), rgba(16, 26, 80, 0.88));
+}
+
+.bp-order {
+  flex: none;
+  width: 15cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3cqh;
+  background: linear-gradient(180deg, #f1d080, #b8892c);
+  color: #2a1c00;
+}
+.bp-order.second {
+  background: linear-gradient(180deg, #8ea2d8, #4c5d96);
+  color: #0b1030;
+}
+.bp-order span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 11cqh;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.bp-p2 .bp-order span {
+  transform: none;
+}
+
+.bp-portrait {
+  position: relative;
+  flex: none;
+  height: 100%;
+  aspect-ratio: 1;
+  border-radius: 4cqh;
+  overflow: hidden;
+  border: max(1px, 1.2cqh) solid var(--b-gold);
+  background: #111a4a;
+}
+.bp-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+  transform: scale(1.35);
+  transform-origin: 50% 22%;
+}
+.bp-portrait-empty {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 35%, #2a3a8a, #0b1030);
+}
+.bp-level {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3cqh;
+  padding: 1.5cqh 0 2cqh;
+  background: linear-gradient(180deg, transparent, rgba(5, 8, 32, 0.95) 45%);
+}
+.bp-level span {
+  font-size: 9cqh;
+  font-weight: 800;
+  color: var(--b-gold);
+}
+.bp-level b {
+  font-size: 15cqh;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-info {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2cqh 2cqh 0;
+}
+.bp-p2 .bp-info {
+  align-items: flex-end;
+  text-align: right;
+}
+/* Champion art bleeding in from the far edge */
+.bp-champ-art {
+  position: absolute;
+  top: -10cqh;
+  right: -6cqh;
+  height: 150cqh;
+  width: 55%;
+  object-fit: cover;
+  object-position: 50% 20%;
+  opacity: 0.38;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 70%);
+  mask-image: linear-gradient(90deg, transparent, #000 70%);
+}
+.bp-p2 .bp-champ-art {
+  right: auto;
+  left: -6cqh;
+  -webkit-mask-image: linear-gradient(270deg, transparent, #000 70%);
+  mask-image: linear-gradient(270deg, transparent, #000 70%);
+}
+.bp-line,
+.bp-stats {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3cqh;
+  max-width: 100%;
+}
+.bp-p2 .bp-line {
+  flex-direction: row-reverse;
+}
+.bp-line svg {
+  width: 12cqh;
+  height: 12cqh;
+  color: var(--b-gold);
+}
+.bp-line span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.6cqh 2cqh rgba(0, 0, 0, 0.9);
+}
+.bp-legend span {
+  font-size: 15cqh;
+  font-weight: 800;
+}
+.bp-champion span {
+  font-size: 13cqh;
+  font-weight: 600;
+  color: #d9e2ff;
+}
+.bp-stats {
+  gap: 7cqh;
+  padding-top: 3cqh;
+  border-top: max(1px, 0.8cqh) solid rgba(226, 189, 98, 0.35);
+  width: 100%;
+}
+.bp-p2 .bp-stats {
+  justify-content: flex-end;
+}
+.bp-stat {
+  display: flex;
+  align-items: center;
+  gap: 2.5cqh;
+}
+.bp-stat svg {
+  width: 12cqh;
+  height: 12cqh;
+  color: #9fb6ff;
+}
+.bp-gold svg {
+  color: var(--b-gold);
+}
+.bp-stat em {
+  font-style: normal;
+  font-size: 10cqh;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b9c4e8;
+}
+.bp-stat b {
+  font-size: 18cqh;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- rune track -------------------------------------------------------------------- */
+
+.br {
+  display: flex;
+  align-items: center;
+  gap: 6cqh;
+  padding: 0 10cqh;
+  background: linear-gradient(90deg, rgba(7, 11, 38, 0.9), rgba(7, 11, 38, 0.55));
+  border: max(1px, 3cqh) solid rgba(120, 160, 255, 0.35);
+  border-radius: 50cqh;
+}
+.br-p2 {
+  flex-direction: row-reverse;
+  background: linear-gradient(270deg, rgba(7, 11, 38, 0.9), rgba(7, 11, 38, 0.55));
+}
+.br-icon svg {
+  width: 52cqh;
+  height: 52cqh;
+  color: #8fb0ff;
+  filter: drop-shadow(0 0 6cqh rgba(120, 170, 255, 0.8));
+}
+.br-count {
+  font-size: 46cqh;
+  font-weight: 700;
+  color: #b9c4e8;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.6em;
+}
+.br-p2 .br-count {
+  text-align: right;
+}
+.br-count b {
+  color: #fff;
+  font-weight: 900;
+}
+.br-pips {
+  display: flex;
+  gap: 5cqh;
+  flex: 1;
+}
+.br-p2 .br-pips {
+  flex-direction: row-reverse;
+}
+.rp svg {
+  display: block;
+  width: 46cqh;
+  height: 46cqh;
+}
+.rp.ready {
+  color: #7fb2ff;
+  filter: drop-shadow(0 0 8cqh rgba(110, 170, 255, 0.95));
+}
+.rp.spent {
+  color: #3a4778;
+}
+.rp.empty {
+  color: rgba(255, 255, 255, 0.08);
+}
+
+/* ---- scoreboard -------------------------------------------------------------------------- */
+
+.bs {
+  display: flex;
+  align-items: stretch;
+  filter: drop-shadow(0 2cqh 5cqh rgba(0, 0, 0, 0.6));
+}
+.bs-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4cqh;
+  padding: 0 5cqh;
+  border: max(1px, 1.5cqh) solid var(--b-gold-soft);
+}
+.bs-p1 {
+  background: linear-gradient(90deg, var(--b-p1-deep), #1a2f90 70%, var(--b-p1));
+  border-right: none;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 8cqh 100%);
+  padding-left: 12cqh;
+}
+.bs-p2 {
+  flex-direction: row-reverse;
+  background: linear-gradient(270deg, var(--b-p2-deep), #7d1830 70%, var(--b-p2));
+  border-left: none;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 8cqh) 100%, 0 100%);
+  padding-right: 12cqh;
+}
+.bs-crest {
+  width: 32cqh;
+  height: 26cqh;
+  flex: none;
+}
+.bs-crest-p1 {
+  color: #b9a2ff;
+  filter: drop-shadow(0 0 4cqh rgba(170, 140, 255, 0.8));
+}
+.bs-crest-p2 {
+  color: #6fe0d6;
+  filter: drop-shadow(0 0 4cqh rgba(110, 224, 214, 0.8));
+}
+.bs-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2cqh;
+}
+.bs-name {
+  max-width: 100%;
+  font-size: 21cqh;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bs-record {
+  font-size: 15cqh;
+  font-weight: 700;
+  color: #f4e6c0;
+  font-variant-numeric: tabular-nums;
+}
+.bs-points {
+  flex: none;
+  min-width: 1.2em;
+  text-align: center;
+  font-size: 44cqh;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 6cqh rgba(255, 255, 255, 0.35);
+}
+.bs-mid {
+  flex: none;
+  width: 26%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqh;
+  background: linear-gradient(180deg, #121a55, var(--b-ink));
+  border: max(1px, 1.5cqh) solid var(--b-gold);
+  border-top: none;
+  border-radius: 0 0 10cqh 10cqh;
+  margin-bottom: -6cqh;
+  box-shadow: 0 0 6cqh rgba(61, 123, 255, 0.45);
+}
+.bs-round {
+  font-size: 13cqh;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--b-gold);
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bs-clock {
+  font-size: 30cqh;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+.bs-clock:not(.running) {
+  color: #b9c4e8;
+}
+.bs-clock.low {
+  color: #ffd27a;
+}
+.bs-clock.over {
+  color: #ff6b7d;
+}
