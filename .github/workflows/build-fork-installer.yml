@@ -1,8 +1,12 @@
 name: Build installer (fork)
 
-# Builds riftbound-setup-<version>.exe + the portable zip on every push to the
-# working branch and attaches them to a GitHub Release, so the app can be
-# installed without Git or Node.js. Also runnable by hand from the Actions tab.
+# On every push to the working branch:
+#   1. Windows: build riftbound-setup-<version>.exe + portable zip
+#   2. Linux:   build the ~1 MB patch zip + update-manifest.json and publish a
+#               release with everything, so installed apps show "Update
+#               available" and update themselves in place.
+# The version is stamped automatically (major.minor from package.json, patch =
+# build number), so every push is a newer version the app will pick up.
 on:
   push:
     branches:
@@ -17,7 +21,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          BASE=$(node -p "require('./package.json').version.split('.').slice(0,2).join('.')")
+          echo "version=${BASE}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+  build-windows:
+    needs: version
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +41,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Stamp version
+        run: npm version ${{ needs.version.outputs.version }} --no-git-tag-version --allow-same-version
 
       - name: Install dependencies
         run: npm ci
@@ -34,21 +53,49 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
 
-      - name: Publish to release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/riftbound-setup-${{ needs.version.outputs.version }}.exe
+            dist/riftbound-obs-windows.zip
+          retention-days: 3
+
+  publish:
+    needs: [version, build-windows]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Stamp version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: dist
+
+      - name: Build patch zip + update manifest
+        run: |
+          npm run build:patch
+          RELEASE_NOTES="Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}" node scripts/generate-manifest.mjs
+          ls -la dist
+
+      - name: Publish release
         run: |
           set -euo pipefail
-          VERSION=$(node -p "require('./package.json').version")
           TAG="v${VERSION}"
-          NOTES="Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. Download riftbound-setup-${VERSION}.exe and run it."
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "$NOTES"
-          else
-            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "Riftbound OBS ${VERSION}" --notes "$NOTES"
-          fi
-          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Riftbound OBS ${VERSION}" \
+            --notes "Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. Installed apps update themselves; for a fresh install run riftbound-setup-${VERSION}.exe." \
             "dist/riftbound-setup-${VERSION}.exe" \
-            "dist/riftbound-obs-windows.zip"
+            "dist/riftbound-obs-windows.zip" \
+            "dist/riftbound-obs-patch-${VERSION}.zip" \
+            "dist/update-manifest.json"
