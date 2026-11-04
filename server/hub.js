@@ -47,6 +47,11 @@ export function buildStateSections() {
       gameCount: match.games.length,
       toWin,
       winner,
+      // Every game's battlefields and winner, for the matchup screen's game strip.
+      history: match.games.map((g) => ({
+        battlefield: { p1: card(g.battlefield?.p1), p2: card(g.battlefield?.p2) },
+        winner: g.winner || null,
+      })),
     },
     game: {
       battlefield: {

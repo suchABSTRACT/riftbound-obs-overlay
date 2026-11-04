@@ -6,6 +6,7 @@ import {
   updateSceneHoleMask,
   slotDomId,
 } from "/shared/layout.js";
+import { mxBuild, mxIdentity, mxUpdate } from "./matchup-riftbound.js";
 
 const stage = document.getElementById("stage");
 const matchupEl = document.getElementById("matchup");
@@ -198,7 +199,12 @@ function renderPokemonOverlay(state) {
   pokemonOverlayEl.innerHTML = `${pokemonSideHtml(state, 0, "p1")}${pokemonSideHtml(state, 1, "p2")}`;
 }
 
+function isRiftboundMatchup(state) {
+  return (state.meta?.gameId || "riftbound") !== "pokemon";
+}
+
 function hashMatchup(state) {
+  if (isRiftboundMatchup(state)) return `mx|${mxIdentity(state)}`;
   const parts = [];
   for (const pl of state.players || []) {
     parts.push(pl?.pseudo || "");
@@ -246,6 +252,12 @@ function sideHtml(player, sideClass) {
 }
 
 function buildMatchupDom(state) {
+  const riftbound = isRiftboundMatchup(state);
+  matchupEl.classList.toggle("mx", riftbound);
+  if (riftbound) {
+    mxBuild(matchupEl, state);
+    return;
+  }
   matchupEl.innerHTML = `${sideHtml(state.players[0], "mp-side-left")}<div class="mp-vs mp-item mp-vs-item" style="--mp-delay:${MP_DELAY.vs}ms;--mp-duration:0.9s">VS</div>${sideHtml(state.players[1], "mp-side-right")}`;
 }
 
@@ -465,6 +477,9 @@ function render(state, info = { type: "state", sections: [] }) {
       enterMatchup(state);
     } else if (hashMatchup(state) !== matchupHash) {
       enterMatchup(state);
+    } else if (isRiftboundMatchup(state)) {
+      // Same players/format: update score, strip and champions in place.
+      mxUpdate(matchupEl, state);
     }
     lastDisplayMode = mode;
     return;

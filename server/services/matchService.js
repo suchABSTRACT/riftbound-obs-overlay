@@ -80,6 +80,8 @@ export async function winGame(player) {
   const toWin = FORMATS[match.format].win;
   const alreadyDecided = match.score.p1 >= toWin || match.score.p2 >= toWin;
   if (!alreadyDecided) {
+    const finished = currentGame(match);
+    if (finished) finished.winner = player;
     match.score[player] = (match.score[player] || 0) + 1;
     const played = match.score.p1 + match.score.p2;
     match.currentGame = Math.min(played, match.games.length - 1);
@@ -120,7 +122,7 @@ export async function setSelection({ gameIndex, player, slot, cardId }) {
   }
   if (cardId) await cacheMany([cardId]);
   game[slot][player] = cardId || null;
-  await persistAndBroadcast(["game", "players"]);
+  await persistAndBroadcast(["match", "game", "players"]);
   return game;
 }
 
@@ -135,7 +137,7 @@ export async function hotBattlefield({ player, cardId }) {
   if (!game) throw Object.assign(new Error("invalid game"), { status: 400 });
   await cacheMany([cardId]);
   game.battlefield[player] = cardId;
-  await persistAndBroadcast(["game", "players"]);
+  await persistAndBroadcast(["match", "game", "players"]);
   return { gameIndex, player, cardId, name: gameData.cardsCache[cardId]?.name || cardId, game };
 }
 

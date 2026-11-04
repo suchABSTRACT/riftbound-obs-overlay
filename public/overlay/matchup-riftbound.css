@@ -1,0 +1,544 @@
+/* =============================================================================
+   Riftbound matchup screen (two player cams + game strip)
+   Geometry is in vw/vh so it scales with the OBS Browser Source (16:9).
+   Camera windows (transparent):  left  x 0.25vw → 49.75vw,  y 0 → 77.6vh
+                                  right x 50.25vw → 99.75vw, y 0 → 77.6vh
+   ============================================================================= */
+
+.matchup.mx {
+  --mx-gold: #e2bd62;
+  --mx-gold-soft: rgba(226, 189, 98, 0.55);
+  --mx-gold-faint: rgba(226, 189, 98, 0.18);
+  --mx-violet-1: #1d0b45;
+  --mx-violet-2: #4c1fa3;
+  --mx-violet-3: #7b45e6;
+  --mx-navy: #070b26;
+  --mx-blue: #3d7bff;
+  --mx-cam-h: 77.6vh;
+  --mx-strip-top: 78.2vh;
+
+  display: block;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.mx-root {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---- camera frames --------------------------------------------------------- */
+
+.mx-cam {
+  position: absolute;
+  top: 0;
+  height: var(--mx-cam-h);
+  width: 49.5vw;
+  border: 0.14vw solid var(--mx-gold-soft);
+  box-shadow:
+    inset 0 0 0 0.1vw rgba(0, 0, 0, 0.55),
+    inset 0 -6vh 6vh -4vh rgba(7, 11, 38, 0.55),
+    0 0 1.4vw rgba(0, 0, 0, 0.45);
+}
+.mx-cam-left {
+  left: 0.25vw;
+}
+.mx-cam-right {
+  right: 0.25vw;
+}
+
+/* Ornate gold corners */
+.mx-corner {
+  position: absolute;
+  width: 3.4vw;
+  height: 3.4vw;
+  border: 0 solid var(--mx-gold);
+  filter: drop-shadow(0 0 0.35vw rgba(226, 189, 98, 0.55));
+}
+.mx-corner::after {
+  content: "";
+  position: absolute;
+  width: 0.55vw;
+  height: 0.55vw;
+  background: var(--mx-gold);
+  transform: rotate(45deg);
+}
+.mx-corner.tl {
+  top: -0.14vw;
+  left: -0.14vw;
+  border-top-width: 0.32vw;
+  border-left-width: 0.32vw;
+}
+.mx-corner.tr {
+  top: -0.14vw;
+  right: -0.14vw;
+  border-top-width: 0.32vw;
+  border-right-width: 0.32vw;
+}
+.mx-corner.bl {
+  bottom: -0.14vw;
+  left: -0.14vw;
+  border-bottom-width: 0.32vw;
+  border-left-width: 0.32vw;
+}
+.mx-corner.br {
+  bottom: -0.14vw;
+  right: -0.14vw;
+  border-bottom-width: 0.32vw;
+  border-right-width: 0.32vw;
+}
+.mx-corner.tl::after,
+.mx-corner.bl::after {
+  left: 0.6vw;
+}
+.mx-corner.tr::after,
+.mx-corner.br::after {
+  right: 0.6vw;
+}
+.mx-corner.tl::after,
+.mx-corner.tr::after {
+  top: 0.6vw;
+}
+.mx-corner.bl::after,
+.mx-corner.br::after {
+  bottom: 0.6vw;
+}
+
+/* Glowing seam between the two cams */
+.mx-seam {
+  position: absolute;
+  top: 0;
+  left: 49.75vw;
+  width: 0.5vw;
+  height: var(--mx-cam-h);
+  background: linear-gradient(180deg, #0a1240, #13206a 50%, #0a1240);
+  box-shadow: 0 0 1.2vw rgba(61, 123, 255, 0.55);
+}
+.mx-seam::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 0.08vw;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, transparent, rgba(140, 180, 255, 0.9) 20%, rgba(140, 180, 255, 0.9) 80%, transparent);
+}
+
+/* ---- name banners ------------------------------------------------------------- */
+
+.mx-banner {
+  position: absolute;
+  top: 3.2vh;
+  height: 5.4vh;
+  width: 21vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 2.6vw;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(90deg, var(--mx-violet-1), var(--mx-violet-2) 55%, var(--mx-violet-3));
+  filter: drop-shadow(0 0.5vh 0.9vh rgba(0, 0, 0, 0.6));
+}
+.mx-banner::before,
+.mx-banner::after {
+  /* gold rails top + bottom */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.28vh;
+  background: linear-gradient(90deg, transparent, var(--mx-gold) 18%, var(--mx-gold) 82%, transparent);
+}
+.mx-banner::before {
+  top: 0;
+}
+.mx-banner::after {
+  bottom: 0;
+}
+.mx-banner-left {
+  left: 1.3vw;
+  clip-path: polygon(2.2vw 0, 100% 0, calc(100% - 2.2vw) 100%, 0 100%);
+}
+.mx-banner-right {
+  right: 1.3vw;
+  clip-path: polygon(0 0, calc(100% - 2.2vw) 0, 100% 100%, 2.2vw 100%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 45%),
+    linear-gradient(270deg, var(--mx-violet-1), var(--mx-violet-2) 55%, var(--mx-violet-3));
+}
+.mx-banner-name {
+  color: #fff;
+  font-size: 3vh;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.8);
+}
+
+/* ---- centre badge (games won) ------------------------------------------------- */
+
+.mx-badge {
+  position: absolute;
+  top: 2.6vh;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 8.5vw;
+  padding: 0.8vh 1.2vw 0.9vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2vh;
+  background: linear-gradient(180deg, #121a55, var(--mx-navy));
+  border: 0.12vw solid var(--mx-gold-soft);
+  border-radius: 0 0 1vw 1vw;
+  box-shadow: 0 0 1.2vw rgba(61, 123, 255, 0.4), 0 0.6vh 1.2vh rgba(0, 0, 0, 0.6);
+  color: #fff;
+  z-index: 3;
+}
+.mx-badge-score {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6vw;
+  font-size: 4.2vh;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.mx-badge-score i {
+  font-style: normal;
+  color: var(--mx-gold);
+  font-size: 3.2vh;
+}
+.mx-badge-meta {
+  font-size: 1.45vh;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--mx-gold);
+}
+
+/* ---- Legend + Champion fan ------------------------------------------------------ */
+
+.mx-hand {
+  position: absolute;
+  bottom: calc(100vh - var(--mx-cam-h) + 2.2vh);
+  width: 22vw;
+  height: 27vh;
+  z-index: 2;
+  pointer-events: none;
+}
+.mx-hand-left {
+  left: 1.6vw;
+}
+.mx-hand-right {
+  right: 1.6vw;
+}
+.mx-card {
+  position: absolute;
+  bottom: 0;
+  height: 25vh;
+  aspect-ratio: 744 / 1039;
+}
+.mx-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.7vh;
+  box-shadow:
+    0 0 0 0.12vh rgba(255, 230, 160, 0.55),
+    0 0 1.6vh rgba(226, 189, 98, 0.35),
+    0 1.2vh 2.4vh rgba(0, 0, 0, 0.65);
+}
+.mx-hand-left .mx-card-legend {
+  left: 0;
+  --mx-rot: -9deg;
+  transform: rotate(var(--mx-rot));
+}
+.mx-hand-left .mx-card-champion {
+  left: 9.2vw;
+  bottom: -0.6vh;
+  --mx-rot: 5deg;
+  transform: rotate(var(--mx-rot));
+}
+.mx-hand-right .mx-card-legend {
+  right: 0;
+  --mx-rot: 9deg;
+  transform: rotate(var(--mx-rot));
+}
+.mx-hand-right .mx-card-champion {
+  right: 9.2vw;
+  bottom: -0.6vh;
+  --mx-rot: -5deg;
+  transform: rotate(var(--mx-rot));
+}
+
+/* ---- game strip ------------------------------------------------------------------ */
+
+.mx-strip {
+  --mx-tiles: 6;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--mx-strip-top);
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  gap: 0.3vw;
+  padding: 0 0.25vw;
+  background:
+    linear-gradient(180deg, rgba(226, 189, 98, 0.65), rgba(226, 189, 98, 0) 0.35vh),
+    linear-gradient(180deg, #0a1035, #050820);
+}
+.mx-tile {
+  position: relative;
+  flex: 0 1 calc((100vw - 0.5vw - (var(--mx-tiles) - 1) * 0.3vw) / var(--mx-tiles));
+  max-width: 36vh;
+  overflow: hidden;
+  background: var(--mx-navy);
+  border: 0.1vw solid rgba(120, 160, 255, 0.28);
+}
+/* Centre gap between the two players' halves */
+.mx-tile.mid-left {
+  margin-right: 0.3vw;
+}
+.mx-tile > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.85) brightness(0.72);
+}
+.mx-tile.current > img {
+  filter: none;
+}
+.mx-tile.current {
+  border-color: var(--mx-gold);
+  box-shadow: inset 0 0 0 0.12vw var(--mx-gold), inset 0 0 2.2vh rgba(226, 189, 98, 0.45);
+}
+.mx-tile.loss > img {
+  filter: saturate(0.35) brightness(0.45);
+}
+
+/* Empty / not-yet-played game: blue rift portal */
+.mx-portal {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 38% 46% at 50% 58%, rgba(10, 18, 70, 0.95) 0 52%, transparent 54%),
+    repeating-radial-gradient(ellipse 60% 70% at 50% 58%, #1b33b8 0 2.2%, #2e5cf2 2.2% 3.4%, #142596 3.4% 5.6%),
+    #12207a;
+  opacity: 0.9;
+}
+.mx-portal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 10%, rgba(120, 180, 255, 0.35), transparent 60%),
+    linear-gradient(180deg, transparent 55%, rgba(5, 8, 32, 0.75));
+}
+
+.mx-tile-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6vh;
+  padding: 0 0.8vw 3.4vh;
+  text-align: center;
+  background: radial-gradient(ellipse 80% 55% at 50% 48%, rgba(5, 8, 32, 0.55), transparent 75%);
+}
+.mx-tile-kicker {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+  font-size: 1.45vh;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f4e6c0;
+}
+.mx-tile-kicker::before,
+.mx-tile-kicker::after {
+  content: "";
+  width: 1.4vw;
+  height: 0.12vh;
+  background: currentColor;
+  opacity: 0.8;
+}
+.mx-tile-name {
+  text-wrap: balance;
+  font-size: 3.2vh;
+  font-weight: 800;
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.9);
+}
+.mx-tile:not(.current) .mx-tile-name {
+  font-size: 2.3vh;
+  color: #dfe6ff;
+}
+
+.mx-result {
+  position: absolute;
+  top: 0.9vh;
+  right: 0.5vw;
+  padding: 0.25vh 0.6vw;
+  font-size: 1.35vh;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 0.4vh;
+}
+.mx-tile.win .mx-result {
+  background: var(--mx-gold);
+  color: #2a1c00;
+  box-shadow: 0 0 1vh rgba(226, 189, 98, 0.6);
+}
+.mx-tile.loss .mx-result {
+  background: rgba(10, 14, 40, 0.85);
+  color: #8e9ac4;
+  border: 0.1vh solid rgba(142, 154, 196, 0.5);
+}
+.mx-tile.side-p1 .mx-result {
+  right: auto;
+  left: 0.5vw;
+}
+
+.mx-tab {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  min-width: 42%;
+  padding: 0.45vh 1vw 0.35vh;
+  text-align: center;
+  font-size: 1.75vh;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(180deg, #1c2a8a, #0b1250);
+  clip-path: polygon(0.9vw 0, calc(100% - 0.9vw) 0, 100% 100%, 0 100%);
+  box-shadow: inset 0 0.18vh 0 rgba(140, 180, 255, 0.6);
+}
+.mx-tile.current .mx-tab {
+  background: linear-gradient(180deg, #f1d080, #b8892c);
+  color: #2a1c00;
+  box-shadow: none;
+}
+
+/* ---- entrance animations ------------------------------------------------------------ */
+
+.matchup.mx.matchup-entering .mp-item {
+  animation-duration: var(--mp-duration, 0.8s);
+  animation-delay: var(--mp-delay, 0ms);
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+.matchup.mx.matchup-entering .mx-a-fade {
+  animation-name: mx-fade;
+}
+.matchup.mx.matchup-entering .mx-a-banner-left {
+  animation-name: mx-banner-left;
+}
+.matchup.mx.matchup-entering .mx-a-banner-right {
+  animation-name: mx-banner-right;
+}
+.matchup.mx.matchup-entering .mx-a-drop {
+  animation-name: mx-drop;
+}
+.matchup.mx.matchup-entering .mx-a-card-left {
+  animation-name: mx-card-left;
+}
+.matchup.mx.matchup-entering .mx-a-card-right {
+  animation-name: mx-card-right;
+}
+.matchup.mx.matchup-entering .mx-a-tile {
+  animation-name: mx-tile-rise;
+}
+
+@keyframes mx-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mx-banner-left {
+  from { opacity: 0; transform: translateX(-26vw); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mx-banner-right {
+  from { opacity: 0; transform: translateX(26vw); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mx-drop {
+  from { opacity: 0; transform: translate(-50%, -6vh); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes mx-card-left {
+  from { opacity: 0; transform: translate(-30vw, 12vh) rotate(-40deg) scale(0.8); }
+  to { opacity: 1; transform: rotate(var(--mx-rot)); }
+}
+@keyframes mx-card-right {
+  from { opacity: 0; transform: translate(30vw, 12vh) rotate(40deg) scale(0.8); }
+  to { opacity: 1; transform: rotate(var(--mx-rot)); }
+}
+@keyframes mx-tile-rise {
+  from { opacity: 0; transform: translateY(24vh); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Live change (battlefield picked, game won, champion swapped) */
+.mx-flip {
+  animation: mx-flip 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes mx-flip {
+  0% { transform: perspective(60vw) rotateY(80deg); opacity: 0.2; }
+  100% { transform: perspective(60vw) rotateY(0); opacity: 1; }
+}
+.mx-card.mx-flip {
+  animation-name: mx-card-flip;
+}
+@keyframes mx-card-flip {
+  0% { transform: rotate(var(--mx-rot)) perspective(60vw) rotateY(80deg); opacity: 0.2; }
+  100% { transform: rotate(var(--mx-rot)) perspective(60vw) rotateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matchup.mx.matchup-entering .mp-item {
+    animation-name: mx-fade !important;
+  }
+}
+
+/* Bo5: ten narrow tiles */
+.mx-strip.dense .mx-tile-kicker::before,
+.mx-strip.dense .mx-tile-kicker::after {
+  display: none;
+}
+.mx-strip.dense .mx-tile-kicker {
+  font-size: 1.15vh;
+  letter-spacing: 0.08em;
+}
+.mx-strip.dense .mx-tile-name {
+  font-size: 2.2vh;
+}
+.mx-strip.dense .mx-tile:not(.current) .mx-tile-name {
+  font-size: 1.7vh;
+}
+.mx-strip.dense .mx-tab {
+  font-size: 1.4vh;
+  min-width: 70%;
+}
+.mx-strip.dense .mx-result {
+  font-size: 1.1vh;
+}
