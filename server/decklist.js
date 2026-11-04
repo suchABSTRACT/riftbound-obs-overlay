@@ -69,15 +69,27 @@ export function parseDecklist(text) {
 
 const BASE_PRINTING = /^[a-z]+-\d+-\d+$/i;
 
+/**
+ * Name used for matching: lower case, without a printing suffix such as
+ * " - Starter" (RiftScribe names starter-deck printings "Wuju Bladesman -
+ * Starter"; decklists just say "Wuju Bladesman").
+ */
+function matchName(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/\s+[-–—]\s+[^-–—,]+$/, "")
+    .trim();
+}
+
 function pickDefault(candidates, name) {
   if (!candidates.length) return null;
-  const lower = name.toLowerCase();
-  let pool = candidates.filter((c) => c.name.toLowerCase() === lower);
+  const lower = matchName(name);
+  let pool = candidates.filter((c) => matchName(c.name) === lower);
   if (!pool.length) {
     // No exact-name match (e.g. a Legend listed as "Champion, Title"): trust
     // the API relevance ordering and stay within the top candidate's name.
-    const topName = candidates[0].name.toLowerCase();
-    pool = candidates.filter((c) => c.name.toLowerCase() === topName);
+    const topName = matchName(candidates[0].name);
+    pool = candidates.filter((c) => matchName(c.name) === topName);
   }
   // Prefer the base printing (no letter/star variant suffix) when available.
   const base = pool.find((c) => BASE_PRINTING.test(c.card_id));
@@ -86,8 +98,8 @@ function pickDefault(candidates, name) {
 
 async function resolveOne(name, category) {
   let candidates = await searchByName(name).catch(() => []);
-  const lower = name.toLowerCase();
-  let hasExact = candidates.some((c) => c.name.toLowerCase() === lower);
+  const lower = matchName(name);
+  let hasExact = candidates.some((c) => matchName(c.name) === lower);
   let chosen = pickDefault(candidates, name);
 
   // Legends are listed as "Champion, Title" in decklists but stored as just
@@ -97,7 +109,7 @@ async function resolveOne(name, category) {
     const title = name.split(",").slice(1).join(",").trim();
     if (title.length >= 2) {
       const alt = await searchByName(title).catch(() => []);
-      const altExact = alt.some((c) => c.name.toLowerCase() === title.toLowerCase());
+      const altExact = alt.some((c) => matchName(c.name) === matchName(title));
       if (altExact) {
         candidates = alt;
         chosen = pickDefault(alt, title);

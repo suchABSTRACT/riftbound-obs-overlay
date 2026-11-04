@@ -227,6 +227,7 @@ function renderPreview(id) {
     entries.forEach((entry, idx) => {
       const row = document.createElement("div");
       row.className = "entry" + (entry.ambiguous ? " ambiguous" : "");
+      if (entry.ambiguous && entry.candidates.length) row.title = "No exact name match — check this is the right card and art";
       const thumb = entry.chosen
         ? entry.candidates.find((c) => c.card_id === entry.chosen)?.thumbnail_url || ""
         : "";
@@ -261,6 +262,9 @@ function renderPreview(id) {
     sel.addEventListener("change", () => {
       const [cat, idx] = sel.dataset.pick.split(":");
       previews[id][cat][Number(idx)].chosen = sel.value;
+      // You picked it yourself, so it is no longer "please check".
+      previews[id][cat][Number(idx)].ambiguous = false;
+      sel.closest(".entry")?.classList.remove("ambiguous");
       const img = sel.parentElement.querySelector("img");
       const cand = previews[id][cat][Number(idx)].candidates.find((c) => c.card_id === sel.value);
       if (img && cand) img.src = cand.thumbnail_url || "";
