@@ -474,7 +474,6 @@ function render(state, info = { type: "state", sections: [] }) {
     sections.has("match");
 
   if (sceneChanged) renderScene(state);
-  updateClock(state);
   renderPokemonOverlay(state);
 
   const layout = normalizeLayout(state.layout);
@@ -510,6 +509,7 @@ function render(state, info = { type: "state", sections: [] }) {
   lastDisplayMode = mode;
   showStageForGame();
   renderGameSlots(state, layout);
+  updateClock(state);
 }
 
 connectState(render);

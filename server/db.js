@@ -11,11 +11,10 @@ function makePlayer(id, gameId = DEFAULT_GAME_ID) {
 }
 
 /** Live board counters shown on the broadcast player panels (per game). */
-const STAT_KEYS = ["hand", "gold", "level", "runesReady", "runesTotal"];
-const MAX_RUNES = 12;
+const STAT_KEYS = ["hand", "level"];
 
 function defaultStats() {
-  return { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 };
+  return { hand: 0, level: 0 };
 }
 
 function makeGame() {
@@ -43,7 +42,7 @@ const FORMATS = {
 const CARD_ANIMATIONS = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
 const POKEMON_MAX_PRIZES = 6;
 
-const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "gold", "runes", "record", "points", "gamesWon", "timer"];
+const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "record", "timer"];
 
 /** Broadcast overlay settings that survive a match reset (round name, clock, what to show). */
 function defaultBroadcast() {
@@ -144,13 +143,13 @@ function defaultLayout() {
   };
 }
 
+// Positions match the "Broadcast standard" mockup at 1920×1080.
 const BROADCAST_BLOCKS = {
-  "p1.panel": { x: 0.6, y: 1.2, width: 24, height: 11 },
-  "p2.panel": { x: 75.4, y: 1.2, width: 24, height: 11 },
-  scoreboard: { x: 29.5, y: 1, width: 41, height: 9.6 },
-  "p1.runes": { x: 0.6, y: 12.8, width: 16, height: 3.6 },
-  "p2.runes": { x: 83.4, y: 12.8, width: 16, height: 3.6 },
+  "p1.panel": { x: 0.8, y: 1.1, width: 23.8, height: 10.6 },
+  "p2.panel": { x: 75.4, y: 1.1, width: 23.8, height: 10.6 },
+  scoreboard: { x: 30, y: 0, width: 40, height: 10 },
 };
+const RETIRED_SLOTS = ["p1.runes", "p2.runes"];
 
 function BROADCAST_BLOCKS_HIDDEN() {
   return Object.fromEntries(Object.entries(BROADCAST_BLOCKS).map(([k, v]) => [k, { ...v, visible: false }]));
@@ -360,6 +359,8 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   for (const p of gameData.players || []) {
     if (typeof p.record !== "string") p.record = "";
   }
+  for (const k of Object.keys(bc.show)) if (!BROADCAST_SHOW_KEYS.includes(k)) delete bc.show[k];
+  for (const slot of RETIRED_SLOTS) delete gameData.layout?.[slot];
 
   for (const g of match.games) {
     if (g.first === undefined) g.first = null;
@@ -453,7 +454,6 @@ export async function initDb() {
 
 export {
   STAT_KEYS,
-  MAX_RUNES,
   BROADCAST_SHOW_KEYS,
   defaultBroadcast,
   defaultLayout,

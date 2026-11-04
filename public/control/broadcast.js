@@ -1,26 +1,19 @@
 // Match tab → "Broadcast" card: round name, match clock, who goes first,
-// per-player board counters (hand, gold, level, runes) and records, plus
+// per-player hand size and level, and records, plus
 // which items the overlay shows. Everything also has a Stream Deck hot URL.
 import { api } from "./api.js";
 import { getData } from "./state.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
-  { key: "gold", label: "Gold", show: "gold" },
   { key: "level", label: "Level", show: "level" },
-  { key: "runesReady", label: "Runes ready", show: "runes" },
-  { key: "runesTotal", label: "Runes total", show: "runes" },
 ];
 
 const SHOW_LABELS = {
   first: "First / second",
   level: "Level",
   hand: "Hand",
-  gold: "Gold",
-  runes: "Rune tracks",
   record: "Records",
-  points: "Points",
-  gamesWon: "Games won",
   timer: "Clock",
 };
 
@@ -42,7 +35,7 @@ function game() {
   return d?.match?.games?.[d.match.currentGame] || {};
 }
 function stats(pid) {
-  return game().stats?.[pid] || { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 };
+  return game().stats?.[pid] || { hand: 0, level: 0 };
 }
 function name(pid) {
   return data()?.players?.find((p) => p.id === pid)?.pseudo || (pid === "p1" ? "Player 1" : "Player 2");
@@ -87,7 +80,6 @@ function playerCol(pid) {
           </div>`
         ).join("")}
       </div>
-      <button type="button" class="btn small" data-bcx-act="ready-runes" data-pid="${pid}">Ready all runes</button>
     </div>`;
 }
 
@@ -124,7 +116,7 @@ function build() {
           .join("")}
       </div>
     </details>
-    <p class="hint">Stream Deck: <code>/api/hot/stat/p1/hand/inc</code> · <code>/api/hot/runes/p2/ready</code> ·
+    <p class="hint">Stream Deck: <code>/api/hot/stat/p1/hand/inc</code> · <code>/api/hot/stat/p2/level/inc</code> ·
       <code>/api/hot/first/p1</code> · <code>/api/hot/timer/toggle</code></p>`;
   update();
 }
@@ -205,9 +197,6 @@ function bind() {
         }
         break;
       }
-      case "ready-runes":
-        applyStats(pid, await post("/api/broadcast/runes/ready", { player: pid }));
-        break;
       case "timer-toggle":
       case "timer-reset":
       case "timer-add":

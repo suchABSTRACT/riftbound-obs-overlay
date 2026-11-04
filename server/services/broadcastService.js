@@ -1,4 +1,4 @@
-import { BROADCAST_SHOW_KEYS, MAX_RUNES, STAT_KEYS, defaultBroadcast, layoutPreset } from "../db.js";
+import { BROADCAST_SHOW_KEYS, STAT_KEYS, defaultBroadcast, layoutPreset } from "../db.js";
 import { PLAYER_IDS } from "../constants.js";
 import { activeGameData, persistAndBroadcast } from "./stateService.js";
 
@@ -16,7 +16,7 @@ function liveGame() {
   if (!game) throw bad("invalid game");
   game.stats ||= {};
   for (const pid of PLAYER_IDS) {
-    game.stats[pid] ||= { hand: 0, gold: 0, level: 0, runesReady: 0, runesTotal: 0 };
+    game.stats[pid] ||= { hand: 0, level: 0 };
   }
   return game;
 }
@@ -99,23 +99,8 @@ export async function setStat({ player, key, delta, value } = {}) {
   if (!STAT_KEYS.includes(key)) throw bad(`key must be one of ${STAT_KEYS.join(", ")}`);
   const stats = liveGame().stats[player];
   let next = typeof value === "number" ? value : (stats[key] || 0) + (Number(delta) || 0);
-  next = Math.max(0, Math.round(next));
-  if (key === "runesTotal") {
-    next = Math.min(MAX_RUNES, next);
-    stats.runesReady = Math.min(stats.runesReady, next);
-  }
-  if (key === "runesReady") next = Math.min(stats.runesTotal, next);
-  if (key !== "runesTotal" && key !== "runesReady") next = Math.min(99, next);
+  next = Math.min(99, Math.max(0, Math.round(next)));
   stats[key] = next;
-  await persistAndBroadcast(["game"]);
-  return stats;
-}
-
-/** Ready every rune (start of turn). */
-export async function readyRunes(player) {
-  if (!PLAYER_IDS.includes(player)) throw bad("invalid player");
-  const stats = liveGame().stats[player];
-  stats.runesReady = stats.runesTotal;
   await persistAndBroadcast(["game"]);
   return stats;
 }
