@@ -1,10 +1,14 @@
-// Riftbound matchup screen: two player-camera windows, name banners, each
-// player's Legend + Champion fanned over their camera, and a game strip along
-// the bottom with every game's battlefield (P1 on the left, P2 on the right,
-// Game 1 meeting in the middle).
+// Riftbound matchup screen, in the same "Broadcast standard" style as the
+// in-game overlay: two player-camera windows framed with thin gold double
+// rules, the blue/red name plates + centre score box across the top, each
+// player's Legend + Champion cards with a name plate, and a game strip along
+// the bottom with every game's battlefield (P1 left, P2 right, Game 1 in the
+// middle).
 //
-// The camera windows are transparent: put the player cams in OBS underneath
-// the Browser Source, sized to the frames (see MX_CAMS for the exact boxes).
+// Camera windows are transparent and sit exactly where they always have, so
+// existing OBS camera sources keep lining up:
+//   left  x 0.25vw → 49.75vw,  y 0 → 77.6vh
+//   right x 50.25vw → 99.75vw, y 0 → 77.6vh
 
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -14,28 +18,29 @@ const PIDS = ["p1", "p2"];
 // Entrance timings (ms).
 const T = {
   frames: 0,
-  banners: 250,
-  badge: 650,
-  legend: 700,
-  champion: 950,
-  strip: 1200,
-  tileStagger: 90,
+  plates: 200,
+  mid: 450,
+  info: 650,
+  legend: 750,
+  champion: 900,
+  strip: 1050,
+  tileStagger: 80,
 };
 
 function imgOf(card) {
   return card?.imageLocal || card?.thumbLocal || "";
 }
-
 function playerName(state, i) {
   return state.players?.[i]?.pseudo || `Player ${i + 1}`;
 }
-
 function championFor(state, pid, i) {
   return state.game?.champion?.[pid] || state.players?.[i]?.champion || null;
 }
-
-function formatLabel(fmt) {
-  return ({ bo1: "Bo1", bo3: "Bo3", bo5: "Bo5" }[fmt] || String(fmt || "Bo3")).toUpperCase();
+function bc(state) {
+  return state.display?.broadcast || { show: {} };
+}
+function shown(state, key) {
+  return bc(state).show?.[key] !== false;
 }
 
 /** Identity of the screen: a change here replays the full entrance. */
@@ -45,40 +50,58 @@ export function mxIdentity(state) {
   return parts.join("|");
 }
 
-// ---- pieces ----------------------------------------------------------------
+const anim = (cls, delay, dur) => `mp-item ${cls}" style="--mp-delay:${delay}ms;--mp-duration:${dur}s`;
 
-function camHtml(side) {
+// ---- top: plates + centre score box ---------------------------------------------
+
+function plateInner(state, i) {
+  const rec = state.players?.[i]?.record;
   return `
-    <div class="mx-cam mx-cam-${side} mp-item mx-a-fade" style="--mp-delay:${T.frames}ms;--mp-duration:.6s">
-      <i class="mx-corner tl"></i><i class="mx-corner tr"></i><i class="mx-corner bl"></i><i class="mx-corner br"></i>
-    </div>`;
+    <span class="mx-name">${esc(playerName(state, i))}</span>
+    ${shown(state, "record") && rec ? `<span class="mx-rec">${esc(rec)}</span>` : ""}`;
 }
 
-function bannerHtml(state, i) {
-  const side = i === 0 ? "left" : "right";
-  return `
-    <div class="mx-banner mx-banner-${side} mp-item mx-a-banner-${side}" style="--mp-delay:${T.banners}ms;--mp-duration:.8s">
-      <span class="mx-banner-name" data-mx="name-${i}">${esc(playerName(state, i))}</span>
-    </div>`;
-}
-
-function badgeInner(state) {
+function midInner(state) {
   const s = state.match?.score || { p1: 0, p2: 0 };
-  const g = (state.match?.currentGame ?? 0) + 1;
   const over = state.match?.winner;
+  const g = (state.match?.currentGame ?? 0) + 1;
+  const fmt = String(state.match?.format || "bo3").toUpperCase();
+  const round = bc(state).roundLabel;
   return `
-    <span class="mx-badge-score"><b>${s.p1}</b><i>–</i><b>${s.p2}</b></span>
-    <span class="mx-badge-meta">${formatLabel(state.match?.format)} · ${over ? "Final" : `Game ${g}`}</span>`;
+    <span class="mx-tab">${over ? "Final" : `Game ${g}`} · ${fmt}</span>
+    <span class="mx-score"><b>${s.p1}</b><i>:</i><b>${s.p2}</b></span>
+    ${round ? `<span class="mx-stage">${esc(round)}</span>` : ""}
+    ${shown(state, "timer") ? `<span class="mx-clock" data-clock>--:--</span>` : ""}`;
 }
 
-function handInner(state, i) {
+// ---- player info plate + cards ---------------------------------------------------
+
+function infoInner(state, i) {
   const pid = PIDS[i];
+  const first = state.game?.first;
+  const order = first ? (first === pid ? "First" : "Second") : "";
+  const legend = state.players?.[i]?.legend;
+  const champ = championFor(state, pid, i);
+  return `
+    ${shown(state, "first") && order ? `<span class="mx-order ${order.toLowerCase()}"><span>${order}</span></span>` : ""}
+    <span class="mx-info-text">
+      <span class="mx-info-legend">${esc(legend?.name || "Legend")}</span>
+      <span class="mx-info-champ">${esc(champ?.name || "Champion")}</span>
+    </span>`;
+}
+
+function handInner(state, i, animate = true) {
+  const pid = PIDS[i];
+  const side = i === 0 ? "l" : "r";
   const legend = imgOf(state.players?.[i]?.legend);
   const champ = imgOf(championFor(state, pid, i));
+  const a = (d) => (animate ? anim(`mx-a-card-${side}`, d, 0.9) : "mp-item mp-settled");
   return `
-    ${legend ? `<div class="mx-card mx-card-legend mp-item mx-a-card-${i === 0 ? "left" : "right"}" style="--mp-delay:${T.legend}ms;--mp-duration:1s"><img src="${legend}" alt="" /></div>` : ""}
-    ${champ ? `<div class="mx-card mx-card-champion mp-item mx-a-card-${i === 0 ? "left" : "right"}" style="--mp-delay:${T.champion}ms;--mp-duration:1s" data-mx="champ-${i}"><img src="${champ}" alt="" /></div>` : ""}`;
+    ${legend ? `<div class="mx-card mx-card-legend ${a(T.legend)}"><img src="${legend}" alt="" /><span class="mx-card-tag">Legend</span></div>` : ""}
+    ${champ ? `<div class="mx-card mx-card-champion ${a(T.champion)}" data-mx="champ-${i}"><img src="${champ}" alt="" /><span class="mx-card-tag">Champion</span></div>` : ""}`;
 }
+
+// ---- game strip -------------------------------------------------------------------
 
 /** Tile order: P1 games N…1 (Game 1 nearest the centre), then P2 games 1…N. */
 function tileList(state) {
@@ -100,74 +123,84 @@ function tileHtml(state, t, delayMs) {
   const h = state.match?.history?.[g] || {};
   const bf = h.battlefield?.[pid] || null;
   const isCurrent = state.match?.currentGame === g && !state.match?.winner;
-  const result = h.winner ? (h.winner === pid ? "win" : "loss") : "";
-  const cls = ["mx-tile", `side-${pid}`, pid === "p1" && g === 0 ? "mid-left" : "", bf ? "has-bf" : "empty", isCurrent ? "current" : "", result].filter(Boolean).join(" ");
-  const anim = delayMs == null ? "" : `mp-item mx-a-tile`;
-  const style = delayMs == null ? "" : `style="--mp-delay:${delayMs}ms;--mp-duration:.7s"`;
+  const played = Boolean(h.winner);
+  const result = played ? (h.winner === pid ? "win" : "loss") : "";
+  const cls = [
+    "mx-tile",
+    `side-${pid}`,
+    pid === "p1" && g === 0 ? "mid-left" : "",
+    bf ? "has-bf" : "empty",
+    isCurrent ? "current" : "",
+    result,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const animAttr = delayMs == null ? "" : ` mp-item mx-a-tile" style="--mp-delay:${delayMs}ms;--mp-duration:.6s`;
   return `
-    <div class="${cls} ${anim}" ${style} data-key="${esc(tileKey(state, t))}">
-      ${bf ? `<img src="${imgOf(bf)}" alt="" />` : `<div class="mx-portal"></div>`}
-      ${
-        bf
-          ? `<div class="mx-tile-text">
-               ${isCurrent ? `<span class="mx-tile-kicker">Current battlefield</span>` : ""}
-               <span class="mx-tile-name">${esc(bf.name || "")}</span>
-             </div>`
-          : ""
-      }
+    <div class="${cls}${animAttr}" data-key="${esc(tileKey(state, t))}">
+      ${bf ? `<img src="${imgOf(bf)}" alt="" />` : ""}
+      <div class="mx-tile-text">
+        ${isCurrent ? `<span class="mx-tile-kicker">Current battlefield</span>` : ""}
+        <span class="mx-tile-name">${bf ? esc(bf.name || "") : isCurrent ? "Not picked yet" : played ? "—" : "Not played"}</span>
+      </div>
       ${result ? `<span class="mx-result">${result === "win" ? "Win" : "Loss"}</span>` : ""}
-      <span class="mx-tab">Game ${g + 1}</span>
+      <span class="mx-gtab">Game ${g + 1}</span>
     </div>`;
 }
 
 function stripInner(state, animate) {
   return tileList(state)
-    .map((t) => {
-      // Stagger outward from the centre (Game 1) to the edges.
-      const delay = animate ? T.strip + t.g * T.tileStagger : null;
-      return tileHtml(state, t, delay);
-    })
+    .map((t) => tileHtml(state, t, animate ? T.strip + t.g * T.tileStagger : null))
     .join("");
 }
 
-// ---- public API --------------------------------------------------------------
+// ---- public API --------------------------------------------------------------------
 
 export function mxBuild(root, state) {
+  const n = state.match?.gameCount || 3;
   root.innerHTML = `
     <div class="mx-root">
-      ${camHtml("left")}${camHtml("right")}
-      <div class="mx-seam mp-item mx-a-fade" style="--mp-delay:${T.frames}ms;--mp-duration:.6s"></div>
-      ${bannerHtml(state, 0)}${bannerHtml(state, 1)}
-      <div class="mx-badge mp-item mx-a-drop" style="--mp-delay:${T.badge}ms;--mp-duration:.7s" data-mx="badge">${badgeInner(state)}</div>
-      <div class="mx-hand mx-hand-left" data-mx="hand-0">${handInner(state, 0)}</div>
-      <div class="mx-hand mx-hand-right" data-mx="hand-1">${handInner(state, 1)}</div>
-      <div class="mx-strip${(state.match?.gameCount || 3) > 3 ? " dense" : ""}" data-mx="strip" style="--mx-tiles:${(state.match?.gameCount || 3) * 2}">${stripInner(state, true)}</div>
+      <div class="mx-cam mx-cam-l ${anim("mx-a-fade", T.frames, 0.5)}"></div>
+      <div class="mx-cam mx-cam-r ${anim("mx-a-fade", T.frames, 0.5)}"></div>
+      <div class="mx-seam ${anim("mx-a-fade", T.frames, 0.5)}"></div>
+
+      <div class="mx-top">
+        <div class="mx-plate mx-plate-l ${anim("mx-a-plate-l", T.plates, 0.7)}" data-mx="plate-0">${plateInner(state, 0)}</div>
+        <div class="mx-mid ${anim("mx-a-drop", T.mid, 0.6)}" data-mx="mid">${midInner(state)}</div>
+        <div class="mx-plate mx-plate-r ${anim("mx-a-plate-r", T.plates, 0.7)}" data-mx="plate-1">${plateInner(state, 1)}</div>
+      </div>
+
+      <div class="mx-info mx-info-l ${anim("mx-a-rise", T.info, 0.6)}" data-mx="info-0">${infoInner(state, 0)}</div>
+      <div class="mx-info mx-info-r ${anim("mx-a-rise", T.info, 0.6)}" data-mx="info-1">${infoInner(state, 1)}</div>
+      <div class="mx-hand mx-hand-l" data-mx="hand-0">${handInner(state, 0)}</div>
+      <div class="mx-hand mx-hand-r" data-mx="hand-1">${handInner(state, 1)}</div>
+
+      <div class="mx-strip${n > 3 ? " dense" : ""}" data-mx="strip" style="--mx-tiles:${n * 2}">${stripInner(state, true)}</div>
     </div>`;
 }
 
 /**
  * Live update while the screen is up (score, game change, battlefield pick,
- * champion swap) without replaying the whole entrance. Only tiles / cards that
- * actually changed get a small flip-in.
+ * champion swap, first player, records) without replaying the entrance. Only
+ * tiles / cards that actually changed get a small flip-in.
  */
 export function mxUpdate(root, state) {
-  const badge = root.querySelector('[data-mx="badge"]');
-  if (badge) badge.innerHTML = badgeInner(state);
-
+  const set = (sel, html) => {
+    const el = root.querySelector(sel);
+    if (el && el.innerHTML !== html) el.innerHTML = html;
+  };
+  set('[data-mx="mid"]', midInner(state));
   [0, 1].forEach((i) => {
-    const name = root.querySelector(`[data-mx="name-${i}"]`);
-    if (name) name.textContent = playerName(state, i);
-    const champEl = root.querySelector(`[data-mx="champ-${i}"] img`);
-    const nextChamp = imgOf(championFor(state, PIDS[i], i));
-    if (champEl && nextChamp && champEl.getAttribute("src") !== nextChamp) {
-      champEl.src = nextChamp;
-      flash(champEl.parentElement);
-    } else if (!champEl && nextChamp) {
+    set(`[data-mx="plate-${i}"]`, plateInner(state, i));
+    set(`[data-mx="info-${i}"]`, infoInner(state, i));
+    const champImg = root.querySelector(`[data-mx="champ-${i}"] img`);
+    const next = imgOf(championFor(state, PIDS[i], i));
+    if (champImg && next && champImg.getAttribute("src") !== next) {
+      champImg.src = next;
+      flash(champImg.parentElement);
+    } else if (!champImg && next) {
       const hand = root.querySelector(`[data-mx="hand-${i}"]`);
-      if (hand) {
-        hand.innerHTML = handInner(state, i);
-        hand.querySelectorAll(".mp-item").forEach((el) => el.classList.add("mp-settled"));
-      }
+      if (hand) hand.innerHTML = handInner(state, i, false);
     }
   });
 
@@ -183,8 +216,7 @@ export function mxUpdate(root, state) {
   }
   tiles.forEach((t, idx) => {
     const el = existing[idx];
-    const key = tileKey(state, t);
-    if (el.dataset.key === key) return;
+    if (el.dataset.key === tileKey(state, t)) return;
     const tmp = document.createElement("div");
     tmp.innerHTML = tileHtml(state, t, null).trim();
     const fresh = tmp.firstElementChild;

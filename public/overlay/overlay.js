@@ -497,6 +497,7 @@ function render(state, info = { type: "state", sections: [] }) {
       mxUpdate(matchupEl, state);
     }
     lastDisplayMode = mode;
+    updateClock(state);
     return;
   }
 
