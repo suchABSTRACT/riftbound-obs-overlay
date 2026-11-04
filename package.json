@@ -1,6 +1,6 @@
 {
   "name": "riftbound-obs-overlay",
-  "version": "2.1.6",
+  "version": "2.2.0",
   "description": "Riftbound stream overlay for OBS (Browser Source) with web control panel.",
   "type": "module",
   "main": "electron/main.cjs",
@@ -9,7 +9,7 @@
     "url": "https://github.com/CaptainLoo/riftbound-obs-overlay.git"
   },
   "riftbound": {
-    "updateRepo": "CaptainLoo/riftbound-obs-overlay"
+    "updateRepo": "suchABSTRACT/riftbound-obs-overlay"
   },
   "scripts": {
     "start": "node server/index.js",

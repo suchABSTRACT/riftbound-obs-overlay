@@ -1,0 +1,54 @@
+name: Build installer (fork)
+
+# Builds riftbound-setup-<version>.exe + the portable zip on every push to the
+# working branch and attaches them to a GitHub Release, so the app can be
+# installed without Git or Node.js. Also runnable by hand from the Actions tab.
+on:
+  push:
+    branches:
+      - feature/broadcast-overlay
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Electron Windows app + installer
+        run: npm run build:electron
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      - name: Publish to release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v${VERSION}"
+          NOTES="Built from ${GITHUB_REF_NAME} @ ${GITHUB_SHA::7}. Download riftbound-setup-${VERSION}.exe and run it."
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "$NOTES"
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Riftbound OBS ${VERSION}" --notes "$NOTES"
+          fi
+          gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber \
+            "dist/riftbound-setup-${VERSION}.exe" \
+            "dist/riftbound-obs-windows.zip"
