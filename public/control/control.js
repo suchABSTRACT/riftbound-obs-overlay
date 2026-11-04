@@ -20,6 +20,7 @@ import {
 import { clamp, cssEscape, escapeAttr, escapeHtml } from "./utils.js";
 import { reloadData, startStateSocket, subscribeData } from "./state.js";
 import { initBroadcast, renderBroadcast, update as updateBroadcast } from "./broadcast.js";
+import { confirmDialog } from "./dialog.js";
 
 function getSlotLabel(slotId) {
   const labels = isPokemonMode() ? SLOT_LABELS_POKEMON : SLOT_LABELS;
@@ -974,6 +975,8 @@ document.addEventListener("keydown", (e) => {
   const tag = (e.target.tagName || "").toLowerCase();
   if (tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  // No shortcuts while a dialog is open (Esc must close it, letters must not win games).
+  if (document.querySelector("dialog[open]")) return;
   const key = e.key.toLowerCase();
   const actions = {
     arrowleft: () => changeGameBy(-1),
@@ -992,9 +995,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.getElementById("reset-match").addEventListener("click", async () => {
-  if (!confirm("Reset the match? Points, games won, current game and battlefield/champion selections will be cleared (decks and names are kept).")) {
-    return;
-  }
+  const ok = await confirmDialog(
+    "Points, games won, the current game and battlefield/champion picks are cleared. Decks and names are kept.",
+    { title: "Reset the match?", ok: "Reset match", danger: true }
+  );
+  if (!ok) return;
   try {
     await api("/api/match/reset", { method: "POST" });
     await reload();
@@ -1284,7 +1289,11 @@ document.getElementById("save-layout").addEventListener("click", async () => {
 document.querySelectorAll("[data-preset]").forEach((btn) =>
   btn.addEventListener("click", async () => {
     const name = btn.dataset.preset;
-    if (!confirm(`Switch to the ${btn.textContent} layout? Your current block positions will be replaced.`)) return;
+    const ok = await confirmDialog("Your current block positions will be replaced.", {
+      title: `Switch to the ${btn.textContent} layout?`,
+      ok: "Switch layout",
+    });
+    if (!ok) return;
     try {
       await api("/api/layout/preset", { method: "POST", body: { name } });
       await reload();
@@ -1718,14 +1727,13 @@ async function pollAfterUpdate(expectedVersion) {
 
 updateApplyBtn?.addEventListener("click", async () => {
   const full = updateState?.downloaded?.mode === "installer";
-  if (
-    !confirm(
-      full
-        ? "Install the update now?\n\nRiftbound OBS will close, the installer runs silently, then the app reopens (usually under a minute)."
-        : "Install the update now?\n\nRiftbound OBS will close for 10–30 seconds. A small \"Updating Riftbound OBS\" window shows the progress, then the app reopens."
-    )
-  )
-    return;
+  const ok = await confirmDialog(
+    full
+      ? "Riftbound OBS will close, the installer runs silently, then the app reopens (usually under a minute)."
+      : "Riftbound OBS will close for 10–30 seconds. A small \"Updating Riftbound OBS\" window shows the progress, then the app reopens.",
+    { title: "Install the update now?", ok: "Install & restart" }
+  );
+  if (!ok) return;
   updateApplyBtn.disabled = true;
   updateDetail.textContent = "Running preflight checks…";
   try {

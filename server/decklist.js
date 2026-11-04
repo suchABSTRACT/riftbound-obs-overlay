@@ -1,13 +1,27 @@
 import { searchByName, fetchCardDetail } from "./riftscribe.js";
 
+// Section headers, matched after normalising the line (see headerKey): any
+// case, optional trailing colon, card counts like "Main Deck (40)" or
+// "Runes - 12", and the names different deck builders export.
 const CATEGORY_HEADERS = [
-  { category: "legend", re: /^(legend|l[ée]gende)s?\s*:?\s*$/i },
-  { category: "champions", re: /^(champion|champion\s*unit)s?\s*:?\s*$/i },
-  { category: "battlefields", re: /^(battlefield|champ\s*de\s*bataille)s?\s*:?\s*$/i },
-  { category: "runes", re: /^(rune)s?\s*:?\s*$/i },
-  { category: "maindeck", re: /^(main\s*deck|maindeck|deck\s*principal|deck)s?\s*:?\s*$/i },
-  { category: "sideboard", re: /^(side\s*board|sideboard|side\s*deck|r[ée]serve)s?\s*:?\s*$/i },
+  { category: "legend", re: /^(legend|l[ée]gende)s?$/ },
+  { category: "champions", re: /^(chosen\s*)?(champion|champion\s*unit)s?$/ },
+  { category: "battlefields", re: /^(battlefield|champ\s*de\s*bataille)s?$/ },
+  { category: "runes", re: /^(rune|runes?\s*(pool|deck)|rune\s*pools?)s?$/ },
+  { category: "maindeck", re: /^(main|main\s*deck|maindeck|deck\s*principal|deck)s?$/ },
+  { category: "sideboard", re: /^(side|side\s*board|sideboard|side\s*deck|r[ée]serve)s?$/ },
 ];
+
+/** "Rune Pool (12):" → "rune pool" */
+function headerKey(line) {
+  return line
+    .toLowerCase()
+    .replace(/[:\-–—]+\s*$/, "")
+    .replace(/\s*[([]?\s*\d+\s*(cards?)?\s*[)\]]?\s*:?\s*$/, "")
+    .replace(/[:\-–—]+\s*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 const LINE_RE = /^(\d+)\s*x?\s+(.+?)\s*$/i;
 
@@ -32,7 +46,8 @@ export function parseDecklist(text) {
     const line = rawLine.trim();
     if (!line || line.startsWith("//") || line.startsWith("#")) continue;
 
-    const header = CATEGORY_HEADERS.find((h) => h.re.test(line));
+    const key = /^\d/.test(line) ? "" : headerKey(line);
+    const header = key && CATEGORY_HEADERS.find((h) => h.re.test(key));
     if (header) {
       current = header.category;
       continue;
