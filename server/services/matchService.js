@@ -13,7 +13,7 @@ function currentGame(match) {
  * champion) when none is picked yet. It stays editable per game, e.g. after
  * sideboarding, and never overwrites a pick.
  */
-function prefillChampion(gameData) {
+export function prefillChampion(gameData) {
   if (getActiveGameId() === "pokemon") return;
   const match = gameData.match;
   const i = match.currentGame;
