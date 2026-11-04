@@ -105,6 +105,26 @@ export async function setStat({ player, key, delta, value } = {}) {
   return stats;
 }
 
+/** Save how one card's art is framed in the player panels (or reset it). */
+export async function setFraming({ cardId, x, y, zoom, reset } = {}) {
+  if (!cardId || typeof cardId !== "string") throw bad("cardId required");
+  const bcs = broadcast();
+  bcs.framing ||= {};
+  if (reset) {
+    delete bcs.framing[cardId];
+  } else {
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, Number(v)));
+    const cur = bcs.framing[cardId] || {};
+    const next = { ...cur };
+    if (x !== undefined && Number.isFinite(Number(x))) next.x = Math.round(clamp(x, 0, 100));
+    if (y !== undefined && Number.isFinite(Number(y))) next.y = Math.round(clamp(y, 0, 100));
+    if (zoom !== undefined && Number.isFinite(Number(zoom))) next.zoom = Math.round(clamp(zoom, 1, 4) * 100) / 100;
+    bcs.framing[cardId] = next;
+  }
+  await persistAndBroadcast(["display"]);
+  return bcs.framing[cardId] || null;
+}
+
 export async function setRecord(player, record) {
   if (!PLAYER_IDS.includes(player)) throw bad("invalid player");
   const p = activeGameData().players.find((x) => x.id === player);

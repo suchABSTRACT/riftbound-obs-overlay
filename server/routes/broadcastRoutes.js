@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   applyLayoutPreset,
   setFirstPlayer,
+  setFraming,
   setRecord,
   setStat,
   timerAction,
@@ -23,6 +24,7 @@ broadcastRoutes.post("/broadcast", wrap((req) => updateBroadcast(req.body ?? {})
 broadcastRoutes.post("/broadcast/timer", wrap((req) => timerAction(req.body?.op, req.body ?? {})));
 broadcastRoutes.post("/broadcast/first", wrap((req) => setFirstPlayer(req.body?.player ?? null)));
 broadcastRoutes.post("/broadcast/stat", wrap((req) => setStat(req.body ?? {})));
+broadcastRoutes.post("/broadcast/framing", wrap((req) => setFraming(req.body ?? {})));
 broadcastRoutes.post("/broadcast/record", wrap((req) => setRecord(req.body?.player, req.body?.record)));
 broadcastRoutes.post("/layout/preset", wrap((req) => applyLayoutPreset(req.body?.name)));
 

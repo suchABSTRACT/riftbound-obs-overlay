@@ -52,6 +52,8 @@ function defaultBroadcast() {
     // `remaining` since `startedAt` (ms epoch).
     timer: { duration: 50 * 60, remaining: 50 * 60, startedAt: null },
     show: Object.fromEntries(BROADCAST_SHOW_KEYS.map((k) => [k, true])),
+    // Per-card art framing for the player panels: cardId -> { x, y, zoom }.
+    framing: {},
   };
 }
 
@@ -354,6 +356,7 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   if (typeof bc.roundLabel !== "string") bc.roundLabel = "";
   if (!bc.timer || typeof bc.timer !== "object") bc.timer = defaultBroadcast().timer;
   bc.show ||= {};
+  if (!bc.framing || typeof bc.framing !== "object") bc.framing = {};
   for (const k of BROADCAST_SHOW_KEYS) if (typeof bc.show[k] !== "boolean") bc.show[k] = true;
 
   for (const p of gameData.players || []) {

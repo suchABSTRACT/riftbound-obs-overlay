@@ -4,6 +4,8 @@
 // games won, round name, clock). Each block is a normal layout slot; the
 // styles scale with the slot box (see broadcast-panels.css).
 
+import { artStyle, framingFor } from "/shared/artFraming.js";
+
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -40,11 +42,12 @@ function panelHtml(state, i) {
   const champ = championOf(state, pid, i);
   const legendArt = img(p.legend);
   const champArt = img(champ);
+  const framing = bc(state).framing || {};
   return `
     <div class="bx">
       <div class="pp pp-${side}">
-        ${legendArt ? `<img class="pp-legend" src="${legendArt}" alt="" />` : ""}
-        ${champArt ? `<img class="pp-champ" src="${champArt}" alt="" />` : ""}
+        ${legendArt ? `<div class="pp-legend" style='${artStyle(legendArt, framingFor(p.legend?.id, framing))}'></div>` : ""}
+        ${champArt ? `<div class="pp-champ" style='${artStyle(champArt, framingFor(champ?.id, framing))}'></div>` : ""}
         ${shown(state, "first") && order ? `<div class="pp-order ${order.toLowerCase()}"><span>${order}</span></div>` : ""}
         ${shown(state, "level") ? `<div class="pp-lv"><span>LV</span><b>${st.level ?? 0}</b></div>` : ""}
         <div class="pp-info">

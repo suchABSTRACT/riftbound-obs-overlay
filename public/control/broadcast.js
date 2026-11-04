@@ -3,6 +3,7 @@
 // which items the overlay shows. Everything also has a Stream Deck hot URL.
 import { api } from "./api.js";
 import { getData } from "./state.js";
+import { ART_LIMITS, artStyle, framingFor } from "/shared/artFraming.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
@@ -80,7 +81,65 @@ function playerCol(pid) {
           </div>`
         ).join("")}
       </div>
+      <details class="bcx-art" data-art-open="${pid}">
+        <summary>Art framing</summary>
+        <p class="hint">Pick the part of the card art shown in the panel. Saved per card.</p>
+        ${artRow(pid, "legend", "Legend")}
+        ${artRow(pid, "champion", "Champion")}
+      </details>
     </div>`;
+}
+
+function artRow(pid, slot, label) {
+  const range = (k, name) =>
+    `<label class="bcx-art-range"><span>${name}</span><input type="range" data-art="${k}" min="${ART_LIMITS[k].min}" max="${ART_LIMITS[k].max}" step="${ART_LIMITS[k].step}" /></label>`;
+  return `
+    <div class="bcx-art-row bcx-art-${slot}" data-art-slot="${pid}:${slot}">
+      <div class="bcx-art-prev" data-art-prev></div>
+      <div class="bcx-art-ctl">
+        <div class="bcx-art-head"><strong>${label}</strong> <span class="hint" data-art-name></span></div>
+        ${range("zoom", "Zoom")}${range("x", "Left / right")}${range("y", "Up / down")}
+        <button type="button" class="btn ghost small" data-art-reset>Reset</button>
+      </div>
+    </div>`;
+}
+
+/** Card id + image for a player's legend or live champion. */
+function artCard(pid, slot) {
+  const d = data();
+  const p = d?.players?.find((x) => x.id === pid);
+  const id = slot === "legend" ? p?.deck?.legend : game().champion?.[pid] || p?.deck?.champions?.[0];
+  const card = id ? d?.cardsCache?.[id] : null;
+  return { id: id || null, card, src: card?.imageLocal || card?.thumbLocal || "" };
+}
+
+function framingMap() {
+  const d = data();
+  d.display ||= {};
+  d.display.broadcast ||= bc();
+  d.display.broadcast.framing ||= {};
+  return d.display.broadcast.framing;
+}
+
+function paintArtRow(row, { force = false } = {}) {
+  const [pid, slot] = row.dataset.artSlot.split(":");
+  const { id, card, src } = artCard(pid, slot);
+  row.dataset.card = id || "";
+  row.classList.toggle("disabled", !src);
+  row.querySelector("[data-art-name]").textContent = card?.name || "— no card —";
+  const f = framingFor(id, framingMap());
+  const prev = row.querySelector("[data-art-prev]");
+  prev.setAttribute("style", src ? artStyle(src, f) : "");
+  row.querySelectorAll("[data-art]").forEach((input) => {
+    input.disabled = !src;
+    if (force || document.activeElement !== input) input.value = f[input.dataset.art];
+  });
+}
+
+const framingTimers = {};
+function sendFraming(cardId, f) {
+  clearTimeout(framingTimers[cardId]);
+  framingTimers[cardId] = setTimeout(() => post("/api/broadcast/framing", { cardId, ...f }), 120);
 }
 
 function build() {
@@ -143,6 +202,7 @@ export function update() {
   const round = root.querySelector("[data-bcx-round]");
   if (round && document.activeElement !== round) round.value = b.roundLabel || "";
   root.querySelectorAll("[data-bcx-show]").forEach((cb) => (cb.checked = b.show?.[cb.dataset.bcxShow] !== false));
+  root.querySelectorAll("[data-art-slot]").forEach((row) => paintArtRow(row));
   tick();
 }
 
@@ -176,7 +236,31 @@ function applyStats(pid, result) {
 }
 
 function bind() {
+  root.addEventListener("input", (e) => {
+    const input = e.target.closest("[data-art]");
+    if (!input) return;
+    const row = input.closest("[data-art-slot]");
+    const cardId = row?.dataset.card;
+    if (!cardId) return;
+    const f = {};
+    row.querySelectorAll("[data-art]").forEach((i) => (f[i.dataset.art] = Number(i.value)));
+    framingMap()[cardId] = f;
+    const { src } = artCard(...row.dataset.artSlot.split(":"));
+    row.querySelector("[data-art-prev]").setAttribute("style", artStyle(src, f));
+    sendFraming(cardId, f);
+  });
+
   root.addEventListener("click", async (e) => {
+    const resetBtn = e.target.closest("[data-art-reset]");
+    if (resetBtn) {
+      const row = resetBtn.closest("[data-art-slot]");
+      const cardId = row?.dataset.card;
+      if (!cardId) return;
+      delete framingMap()[cardId];
+      paintArtRow(row, { force: true });
+      await post("/api/broadcast/framing", { cardId, reset: true });
+      return;
+    }
     const statBtn = e.target.closest("[data-bcx-stat]");
     if (statBtn) {
       const [pid, key, d] = statBtn.dataset.bcxStat.split(":");

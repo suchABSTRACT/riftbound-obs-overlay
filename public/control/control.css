@@ -876,3 +876,64 @@ select:focus {
 .layout-toolbar {
   flex-wrap: wrap;
 }
+
+/* ---- Broadcast: art framing editor ---- */
+.bcx-art summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+.bcx-art[open] summary {
+  margin-bottom: 6px;
+}
+.bcx-art-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.bcx-art-row.disabled {
+  opacity: 0.5;
+}
+.bcx-art-prev {
+  flex: none;
+  height: 91px;
+  background-color: #0b1230;
+  border: 1px solid #b99a5b;
+  border-radius: 4px;
+}
+/* Same shapes as the overlay's art boxes (178×114 legend, 150×114 champion) */
+.bcx-art-legend .bcx-art-prev {
+  width: 142px;
+}
+.bcx-art-champion .bcx-art-prev {
+  width: 120px;
+}
+.bcx-art-ctl {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bcx-art-head {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bcx-art-range {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.bcx-art-range input {
+  width: 100%;
+}
+.bcx-art-ctl .btn {
+  align-self: flex-start;
+}
