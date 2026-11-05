@@ -51,14 +51,34 @@ export function findAppLauncher(installRoot) {
   return null;
 }
 
+/**
+ * Environment for relaunching the app. The updater runs as Node
+ * (ELECTRON_RUN_AS_NODE=1); passing that on would start the exe as a bare
+ * Node process that exits at once, so the app would never come back.
+ */
+function appLaunchEnv() {
+  const env = { ...process.env };
+  for (const key of [
+    "ELECTRON_RUN_AS_NODE",
+    "RIFTBOUND_ELECTRON",
+    "RIFTBOUND_UPDATE_PARENT_PID",
+    "RIFTBOUND_PROGRESS_UI",
+  ]) {
+    delete env[key];
+  }
+  return env;
+}
+
 export function spawnAppLauncher(installRoot, { spawnFn, cwd }) {
   const launcher = findAppLauncher(installRoot);
   if (!launcher) return false;
+  const env = appLaunchEnv();
   if (launcher.kind === "exe") {
     spawnFn("cmd.exe", ["/c", "start", "Riftbound OBS", launcher.path], {
       detached: true,
       stdio: "ignore",
       cwd: cwd || installRoot,
+      env,
       windowsHide: false,
     }).unref();
     return true;
@@ -66,6 +86,7 @@ export function spawnAppLauncher(installRoot, { spawnFn, cwd }) {
   spawnFn("cmd.exe", ["/c", "start", "Riftbound OBS", "/D", installRoot, launcher.path], {
     detached: true,
     stdio: "ignore",
+    env,
     windowsHide: false,
   }).unref();
   return true;
