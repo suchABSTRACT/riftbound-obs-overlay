@@ -7,6 +7,8 @@ import { PUBLIC_DIR, DATA_DIR, IS_ELECTRON, IS_RELEASE } from "./paths.js";
 import { logStartup } from "./startupLog.js";
 import { initDb } from "./db.js";
 import { initHub, closeHub } from "./hub.js";
+import { warmBattlefieldText } from "./cardText.js";
+import { persistAndBroadcast } from "./services/stateService.js";
 import { router } from "./routes.js";
 import { startStreamDeckSafe, stopStreamDeckSafe } from "./streamdeckApi.js";
 import { clearAppPid, registerShutdownForUpdate, writeAppPid } from "./update-shutdown.js";
@@ -82,6 +84,7 @@ export async function startServer(options = {}) {
   console.log(`  Control panel            : http://localhost:${port}/control`);
   if (IS_RELEASE) console.log(`  Data folder              : ${DATA_DIR}`);
   /* Stream Deck HID runs in a separate worker — auto-starts shortly after boot */
+  setTimeout(() => warmBattlefieldText(persistAndBroadcast), 5000);
   setTimeout(() => {
     startStreamDeckSafe().catch((err) => logStartup("[streamdeck] auto-start failed", err));
   }, 3000);

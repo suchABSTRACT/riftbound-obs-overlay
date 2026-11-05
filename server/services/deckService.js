@@ -4,6 +4,7 @@ import { parseDecklist, resolveDecklist, resolveTTS } from "../decklist.js";
 import { parseLimitless, resolveLimitless } from "../pokemonDecklist.js";
 import { getGameAdapter } from "../gameAdapters/index.js";
 import { cacheMany } from "./cardCacheService.js";
+import { warmBattlefieldText } from "../cardText.js";
 import { activeGameData, persistAndBroadcast } from "./stateService.js";
 import { prefillChampion } from "./matchService.js";
 import { requirePlayer } from "./playerService.js";
@@ -26,6 +27,7 @@ export async function savePlayerDeck(playerId, incoming = {}) {
   player.deck = deck;
   dropStalePicks(playerId, deck);
   await persistAndBroadcast();
+  warmBattlefieldText(persistAndBroadcast); // battlefield rules text, in the background
   return deck;
 }
 

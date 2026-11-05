@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { join, extname } from "node:path";
 import { getActiveGameData, getActiveGameId } from "./db.js";
 import { getCardsDir } from "./paths.js";
+import { extractCardText } from "./cardText.js";
 
 const API_BASE = "https://riftscribe.gg/api";
 
@@ -107,6 +108,8 @@ export async function cacheCard(cardId) {
     imageLocal,
     thumbLocal: thumbLocal || imageLocal,
   };
+  const text = extractCardText(detail);
+  if (text) entry.text = text;
 
   gameData.cardsCache[id] = entry;
   const { db } = await import("./db.js");

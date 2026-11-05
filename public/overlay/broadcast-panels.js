@@ -27,10 +27,10 @@ const RUNE_ICON =
   '<svg aria-hidden="true" viewBox="0 0 20 20" class="ic"><path d="M10 2l6 8-6 8-6-8z"/><path d="M10 6v8M7.5 10h5"/></svg>';
 const FIL =
   '<svg aria-hidden="true" class="fil {c}" viewBox="0 0 60 60"><path d="M2 58V20C2 10 10 2 20 2h38"/><path d="M8 52V24c0-9 7-16 16-16h28"/><path d="M14 30c0-9 7-16 16-16 0 9-7 16-16 16z"/><circle cx="34" cy="10" r="2.2"/><circle cx="10" cy="34" r="2.2"/></svg>';
-const fils = (...corners) => corners.map((c) => FIL.replace("{c}", c)).join("");
+export const fils = (...corners) => corners.map((c) => FIL.replace("{c}", c)).join("");
 
 /** Layered shape: metallic gold edge > fill > faint inner hairline > textured fill. */
-const shape = (cls, inner) =>
+export const shape = (cls, inner) =>
   `<div class="sh ${cls}"><i class="sh-a"></i><i class="sh-b"></i><i class="sh-c"></i>${inner}</div>`;
 
 function bc(state) {
