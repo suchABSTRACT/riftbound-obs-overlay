@@ -7,15 +7,26 @@ import { ART_LIMITS, artStyle, framingFor } from "/shared/artFraming.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
-  { key: "level", label: "Level", show: "level" },
+  { key: "level", label: "XP", show: "level" },
 ];
+
+const DOMAIN_COLORS = {
+  fury: "#e0483a",
+  calm: "#3fb46d",
+  mind: "#3e8ff0",
+  body: "#ee8b2b",
+  chaos: "#9a5ee6",
+  order: "#e9c43c",
+};
 
 const SHOW_LABELS = {
   first: "First / second",
-  level: "Level",
+  level: "XP",
   hand: "Hand",
+  runes: "Rune pool",
   record: "Records",
   timer: "Clock",
+  results: "Game results",
 };
 
 let root = null;
@@ -81,12 +92,52 @@ function playerCol(pid) {
           </div>`
         ).join("")}
       </div>
+      ${runeBlock(pid)}
       <details class="bcx-art" data-art-open="${pid}">
         <summary>Art framing</summary>
         <p class="hint">Pick the part of the card art shown in the panel. Saved per card.</p>
         ${artRow(pid, "legend", "Legend")}
         ${artRow(pid, "champion", "Champion")}
       </details>
+    </div>`;
+}
+
+function domainsOf(pid) {
+  return data()?.players?.find((p) => p.id === pid)?.runeDomains || [];
+}
+
+function runeBlock(pid) {
+  const domains = domainsOf(pid);
+  if (!domains.length) {
+    return `<p class="hint bcx-runes-empty">Rune pool: save a deck with a Runes section to track runes.</p>`;
+  }
+  const rows = domains
+    .map(
+      (d) => `
+      <div class="bcx-rune" style="--c:${DOMAIN_COLORS[d] || "#8a93b3"}">
+        <span class="bcx-rune-name"><i></i>${d}</span>
+        <span class="bcx-rune-lbl">On board</span>
+        <div class="stepper">
+          <button type="button" data-bcx-rune="${pid}:${d}:total:-1" aria-label="${d} on board minus">−</button>
+          <span class="val" data-bcx-runeval="${pid}:${d}:total">0</span>
+          <button type="button" data-bcx-rune="${pid}:${d}:total:1" aria-label="${d} on board plus">+</button>
+        </div>
+        <span class="bcx-rune-lbl">Ready</span>
+        <div class="stepper">
+          <button type="button" data-bcx-rune="${pid}:${d}:ready:-1" aria-label="${d} ready minus">−</button>
+          <span class="val" data-bcx-runeval="${pid}:${d}:ready">0</span>
+          <button type="button" data-bcx-rune="${pid}:${d}:ready:1" aria-label="${d} ready plus">+</button>
+        </div>
+      </div>`
+    )
+    .join("");
+  return `
+    <div class="bcx-runes" data-bcx-runes="${pid}" data-domains="${domains.join(",")}">
+      <div class="bcx-runes-head"><strong>Rune pool</strong>
+        <span><button type="button" class="btn ghost small" data-bcx-act="runes-ready" data-pid="${pid}">Ready all</button>
+        <button type="button" class="btn ghost small" data-bcx-act="runes-exhaust" data-pid="${pid}">Exhaust all</button></span>
+      </div>
+      ${rows}
     </div>`;
 }
 
@@ -175,7 +226,7 @@ function build() {
           .join("")}
       </div>
     </details>
-    <p class="hint">Stream Deck: <code>/api/hot/stat/p1/hand/inc</code> · <code>/api/hot/stat/p2/level/inc</code> ·
+    <p class="hint">Stream Deck: <code>/api/hot/stat/p1/hand/inc</code> · <code>/api/hot/stat/p2/level/inc</code> · <code>/api/hot/rune/p1/fury/total/inc</code> · <code>/api/hot/runes/p1/ready</code> ·
       <code>/api/hot/first/p1</code> · <code>/api/hot/timer/toggle</code></p>`;
   update();
 }
@@ -203,6 +254,16 @@ export function update() {
   if (round && document.activeElement !== round) round.value = b.roundLabel || "";
   root.querySelectorAll("[data-bcx-show]").forEach((cb) => (cb.checked = b.show?.[cb.dataset.bcxShow] !== false));
   root.querySelectorAll("[data-art-slot]").forEach((row) => paintArtRow(row));
+  for (const pid of ["p1", "p2"]) {
+    const box = root.querySelector(`[data-bcx-runes="${pid}"]`);
+    const want = domainsOf(pid).join(",");
+    if ((box?.dataset.domains || "") !== want) return build();
+    const runes = stats(pid).runes || {};
+    root.querySelectorAll(`[data-bcx-runeval^="${pid}:"]`).forEach((el) => {
+      const [, d, k] = el.dataset.bcxRuneval.split(":");
+      el.textContent = runes[d]?.[k] ?? 0;
+    });
+  }
   tick();
 }
 
@@ -261,6 +322,18 @@ function bind() {
       await post("/api/broadcast/framing", { cardId, reset: true });
       return;
     }
+    const runeBtn = e.target.closest("[data-bcx-rune]");
+    if (runeBtn) {
+      const [pid, domain, key, d] = runeBtn.dataset.bcxRune.split(":");
+      const r = await post("/api/broadcast/rune", { player: pid, domain, key, delta: Number(d) });
+      if (r) {
+        const g = game();
+        g.stats ||= {};
+        g.stats[pid] = { ...(g.stats[pid] || {}), runes: r.result };
+        update();
+      }
+      return;
+    }
     const statBtn = e.target.closest("[data-bcx-stat]");
     if (statBtn) {
       const [pid, key, d] = statBtn.dataset.bcxStat.split(":");
@@ -278,6 +351,17 @@ function bind() {
           game().first = r.result;
           update();
           toast(r.result ? `${name(r.result)} goes first` : "First player cleared");
+        }
+        break;
+      }
+      case "runes-ready":
+      case "runes-exhaust": {
+        const r = await post("/api/broadcast/runes/all", { player: pid, mode: act.dataset.bcxAct.slice(6) });
+        if (r) {
+          const g = game();
+          g.stats ||= {};
+          g.stats[pid] = { ...(g.stats[pid] || {}), runes: r.result };
+          update();
         }
         break;
       }

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getActiveGameId } from "../db.js";
 import { getGame } from "../games.js";
 import { displayCardEntries } from "../deckCards.js";
+import { runeDomains } from "../gameAdapters/riftboundAdapter.js";
 import { buildState } from "../hub.js";
 import { activeGameData } from "../services/stateService.js";
 
@@ -21,6 +22,7 @@ dataRoutes.get("/data", (_req, res) => {
     players: gameData.players.map((p) => ({
       ...p,
       displayCards: displayCardEntries(p.deck, gameData.cardsCache, activeGame),
+      runeDomains: activeGame === "pokemon" ? [] : runeDomains(p.deck, gameData.cardsCache),
     })),
     match: gameData.match,
     display: gameData.display,

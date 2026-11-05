@@ -970,3 +970,43 @@ select:focus {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* ---- Broadcast: rune pool ---- */
+.bcx-runes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.bcx-runes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.bcx-rune {
+  display: grid;
+  grid-template-columns: 74px auto auto auto auto;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 13px;
+}
+.bcx-rune-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+.bcx-rune-name i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--c);
+}
+.bcx-rune-lbl {
+  color: var(--muted);
+  font-size: 12px;
+}

@@ -15,6 +15,8 @@ export const SLOT_LABELS = {
   "p1.panel": "P1 · Player panel",
   "p2.panel": "P2 · Player panel",
   scoreboard: "Scoreboard + clock",
+  "p1.runes": "P1 · Rune pool",
+  "p2.runes": "P2 · Rune pool",
 };
 
 export const SLOT_LABELS_POKEMON = {

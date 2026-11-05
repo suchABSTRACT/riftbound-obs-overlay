@@ -68,8 +68,8 @@ export async function setMatchFormat(format) {
       score: { p1: 0, p2: 0 },
       first: null,
       stats: {
-        p1: { hand: 0, level: 0 },
-        p2: { hand: 0, level: 0 },
+        p1: { hand: 0, level: 0, runes: {} },
+        p2: { hand: 0, level: 0, runes: {} },
       },
       pokemon: { p1: { active: null, bench: [] }, p2: { active: null, bench: [] } },
     });

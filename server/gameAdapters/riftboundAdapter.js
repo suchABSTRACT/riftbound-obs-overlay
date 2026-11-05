@@ -73,12 +73,27 @@ export function playerBattlefields(player, cardsCache = {}) {
   });
 }
 
+const DOMAINS = ["fury", "calm", "mind", "body", "chaos", "order"];
+
+/** Rune domains in a deck, in decklist order (e.g. ["fury", "chaos"]). */
+export function runeDomains(deck = {}, cardsCache = {}) {
+  const out = [];
+  for (const e of deck.runes || []) {
+    const c = cardsCache[e.id] || {};
+    const words = `${c.name || ""} ${c.faction || ""} ${e.id || ""}`.toLowerCase();
+    const d = DOMAINS.find((x) => words.includes(x));
+    if (d && !out.includes(d)) out.push(d);
+  }
+  return out;
+}
+
 export function buildOverlayPlayers(players = [], cardsCache = {}) {
   const card = (id) => (id ? cardsCache[id] || null : null);
   return players.map((p) => ({
     id: p.id,
     pseudo: p.pseudo,
     record: p.record || "",
+    runeDomains: runeDomains(p.deck, cardsCache),
     legend: card(p.deck.legend),
     champion: card((p.deck.champions || [])[0]),
     battlefields: (p.deck.battlefields || []).map((e) => card(e.id)).filter(Boolean),

@@ -16,7 +16,7 @@ function liveGame() {
   if (!game) throw bad("invalid game");
   game.stats ||= {};
   for (const pid of PLAYER_IDS) {
-    game.stats[pid] ||= { hand: 0, level: 0 };
+    game.stats[pid] ||= { hand: 0, level: 0, runes: {} };
   }
   return game;
 }
@@ -103,6 +103,45 @@ export async function setStat({ player, key, delta, value } = {}) {
   stats[key] = next;
   await persistAndBroadcast(["game"]);
   return stats;
+}
+
+const RUNE_DOMAINS = ["fury", "calm", "mind", "body", "chaos", "order"];
+const MAX_RUNES = 12;
+
+/**
+ * Runes on the board for one domain: `key` "total" (channelled) or "ready",
+ * by `delta` or absolute `value`. Ready never exceeds total; total caps at 12
+ * across all domains.
+ */
+export async function setRune({ player, domain, key, delta, value } = {}) {
+  if (!PLAYER_IDS.includes(player)) throw bad("invalid player");
+  if (!RUNE_DOMAINS.includes(domain)) throw bad(`domain must be one of ${RUNE_DOMAINS.join(", ")}`);
+  if (key !== "total" && key !== "ready") throw bad("key must be total or ready");
+  const stats = liveGame().stats[player];
+  stats.runes ||= {};
+  const r = (stats.runes[domain] ||= { total: 0, ready: 0 });
+  const cur = r[key] || 0;
+  let next = Math.max(0, Math.round(typeof value === "number" ? value : cur + (Number(delta) || 0)));
+  if (key === "total") {
+    const others = Object.entries(stats.runes).reduce((s, [d, v]) => (d === domain ? s : s + (v.total || 0)), 0);
+    next = Math.min(next, MAX_RUNES - others);
+    // A newly channelled rune comes in ready; removing one removes a ready one first.
+    r.ready = Math.min(next, Math.max(0, r.ready + (next - cur)));
+    r.total = next;
+  } else {
+    r.ready = Math.min(next, r.total);
+  }
+  await persistAndBroadcast(["game"]);
+  return stats.runes;
+}
+
+/** Start of turn: every rune on the board becomes ready again. Or exhaust all. */
+export async function setAllRunes(player, mode = "ready") {
+  if (!PLAYER_IDS.includes(player)) throw bad("invalid player");
+  const stats = liveGame().stats[player];
+  for (const r of Object.values(stats.runes || {})) r.ready = mode === "exhaust" ? 0 : r.total;
+  await persistAndBroadcast(["game"]);
+  return stats.runes;
 }
 
 /** Save how one card's art is framed in the player panels (or reset it). */

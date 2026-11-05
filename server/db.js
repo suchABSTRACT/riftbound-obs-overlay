@@ -14,7 +14,8 @@ function makePlayer(id, gameId = DEFAULT_GAME_ID) {
 const STAT_KEYS = ["hand", "level"];
 
 function defaultStats() {
-  return { hand: 0, level: 0 };
+  // runes: { [domain]: { total, ready } } — runes on the board this game.
+  return { hand: 0, level: 0, runes: {} };
 }
 
 function makeGame() {
@@ -42,7 +43,7 @@ const FORMATS = {
 const CARD_ANIMATIONS = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
 const POKEMON_MAX_PRIZES = 6;
 
-const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "record", "timer"];
+const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "runes", "record", "timer", "results"];
 
 /** Broadcast overlay settings that survive a match reset (round name, clock, what to show). */
 function defaultBroadcast() {
@@ -145,13 +146,17 @@ function defaultLayout() {
   };
 }
 
-// Positions match the "Broadcast standard" mockup at 1920×1080.
+// Positions match the "Filigree" mockup (canvas round 5) at 1920×1080.
 const BROADCAST_BLOCKS = {
-  "p1.panel": { x: 0.8, y: 1.1, width: 23.8, height: 10.6 },
-  "p2.panel": { x: 75.4, y: 1.1, width: 23.8, height: 10.6 },
-  scoreboard: { x: 30, y: 0, width: 40, height: 10 },
+  "p1.panel": { x: 0.73, y: 1.11, width: 24.48, height: 11.11 },
+  "p2.panel": { x: 74.79, y: 1.11, width: 24.48, height: 11.11 },
+  scoreboard: { x: 28.65, y: 0.74, width: 42.71, height: 14.81 },
+  "p1.runes": { x: 1.25, y: 12.96, width: 17.71, height: 3.15 },
+  "p2.runes": { x: 81.04, y: 12.96, width: 17.71, height: 3.15 },
 };
-const RETIRED_SLOTS = ["p1.runes", "p2.runes"];
+const RETIRED_SLOTS = [];
+// Bump when BROADCAST_BLOCKS change shape so saved layouts move to the new spots.
+const BROADCAST_LAYOUT_VERSION = 2;
 
 function BROADCAST_BLOCKS_HIDDEN() {
   return Object.fromEntries(Object.entries(BROADCAST_BLOCKS).map(([k, v]) => [k, { ...v, visible: false }]));
@@ -364,11 +369,23 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   }
   for (const k of Object.keys(bc.show)) if (!BROADCAST_SHOW_KEYS.includes(k)) delete bc.show[k];
   for (const slot of RETIRED_SLOTS) delete gameData.layout?.[slot];
+  // Broadcast blocks were redesigned: move them to the new default spots once,
+  // keeping whether the broadcast layout is in use (rune tracks follow panels).
+  if (gameId !== "pokemon" && (gameData.broadcastLayoutVersion ?? 1) < BROADCAST_LAYOUT_VERSION && gameData.layout) {
+    const using = gameData.layout["p1.panel"]?.visible === true || gameData.layout.scoreboard?.visible === true;
+    for (const [k, v] of Object.entries(BROADCAST_BLOCKS)) {
+      gameData.layout[k] = { ...v, visible: using };
+    }
+    gameData.broadcastLayoutVersion = BROADCAST_LAYOUT_VERSION;
+  }
 
   for (const g of match.games) {
     if (g.first === undefined) g.first = null;
     g.stats ||= {};
-    for (const pid of ["p1", "p2"]) g.stats[pid] = { ...defaultStats(), ...(g.stats[pid] || {}) };
+    for (const pid of ["p1", "p2"]) {
+      g.stats[pid] = { ...defaultStats(), ...(g.stats[pid] || {}) };
+      if (!g.stats[pid].runes || typeof g.stats[pid].runes !== "object") g.stats[pid].runes = {};
+    }
     if (!g.score || typeof g.score !== "object") g.score = { p1: 0, p2: 0 };
     if (typeof g.score.p1 !== "number") g.score.p1 = 0;
     if (typeof g.score.p2 !== "number") g.score.p2 = 0;
