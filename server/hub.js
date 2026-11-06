@@ -1,4 +1,5 @@
 import { WebSocketServer } from "ws";
+import { noteOverlayScreen } from "./obs.js";
 import { getActiveGameData, getActiveGameId, FORMATS } from "./db.js";
 import { getGame } from "./games.js";
 import { getCachedCard } from "./cardProvider.js";
@@ -118,6 +119,7 @@ export function closeHub() {
 }
 
 export function broadcastState() {
+  noteOverlayScreen(); // switch OBS scenes when the overlay's screen changes
   if (!wss) return;
   const message = JSON.stringify({ type: "state", state: buildState() });
   for (const client of wss.clients) {
@@ -135,6 +137,7 @@ export function buildPatch(...sections) {
 }
 
 export function broadcastPatch(sections) {
+  noteOverlayScreen();
   if (!wss) return;
   const list = Array.isArray(sections) ? sections : [sections];
   const patch = buildPatch(list);

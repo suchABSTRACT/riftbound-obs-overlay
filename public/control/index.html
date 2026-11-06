@@ -17,6 +17,7 @@
         <button class="tab" data-tab="match">Match</button>
         <button class="tab" data-tab="streamdeck">Stream Deck</button>
         <button class="tab" data-tab="layout">Layout</button>
+        <button class="tab" data-tab="obs">OBS <i class="obs-dot" id="obs-dot" title="OBS connection"></i></button>
       </nav>
       <span class="app-version" id="app-version"></span>
       <select class="update-version-select hidden" id="update-version-select" title="Update version">
@@ -165,6 +166,36 @@
             <h2 class="layout-css-title">Generated CSS</h2>
             <pre id="layout-css-out" class="layout-css-out"></pre>
           </aside>
+        </div>
+      </section>
+      <!-- ============ OBS ============ -->
+      <section id="tab-obs" class="panel">
+        <div class="card-block obs-card">
+          <h2>OBS scene switching</h2>
+          <p class="hint">
+            When you change screens here (in-game, matchup, decklist), OBS switches to the scene you pick
+            for it, so whoever runs this app also drives the cameras. In OBS: <strong>Tools → WebSocket
+            Server Settings</strong> → tick <em>Enable WebSocket server</em>, then copy the port and password
+            (<em>Show Connect Info</em>). OBS can be on another computer: use that PC's IP address.
+          </p>
+          <label class="obs-toggle"><input type="checkbox" id="obs-enabled" /> Connect to OBS</label>
+          <div class="obs-grid">
+            <label>Address <input type="text" id="obs-host" placeholder="127.0.0.1" /></label>
+            <label>Port <input type="number" id="obs-port" min="1" max="65535" placeholder="4455" /></label>
+            <label>Password <input type="password" id="obs-password" autocomplete="off" /></label>
+            <button class="btn" id="obs-connect">Connect</button>
+          </div>
+          <p class="obs-status" id="obs-status"></p>
+        </div>
+
+        <div class="card-block obs-card">
+          <h2>Scene for each screen</h2>
+          <p class="hint">Pick the OBS scene each screen should cut to. "Don't switch" leaves OBS alone for that screen.</p>
+          <div class="obs-scenes" id="obs-scenes"></div>
+          <h2>When switching</h2>
+          <label class="obs-radio"><input type="radio" name="obs-target" value="program" /> <strong>Go live</strong> — cut straight to the scene (uses OBS's current transition)</label>
+          <label class="obs-radio"><input type="radio" name="obs-target" value="preview" /> <strong>Send to preview</strong> — in Studio Mode the OBS operator takes it live; goes live directly when Studio Mode is off</label>
+          <p class="hint" id="obs-last"></p>
         </div>
       </section>
     </main>

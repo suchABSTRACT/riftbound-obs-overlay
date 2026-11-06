@@ -8,6 +8,7 @@ import { layoutRoutes } from "./routes/layoutRoutes.js";
 import { streamdeckRoutes } from "./routes/streamdeckRoutes.js";
 import { updateRoutes } from "./routes/updateRoutes.js";
 import { broadcastRoutes } from "./routes/broadcastRoutes.js";
+import { obsRoutes } from "./routes/obsRoutes.js";
 
 export const router = Router();
 
@@ -20,3 +21,4 @@ router.use(layoutRoutes);
 router.use(streamdeckRoutes);
 router.use(updateRoutes);
 router.use(broadcastRoutes);
+router.use(obsRoutes);

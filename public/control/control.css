@@ -156,6 +156,8 @@ label {
 
 input[type="text"],
 input[type="number"],
+input[type="password"],
+input[type="url"],
 textarea,
 select {
   width: 100%;
@@ -1059,3 +1061,33 @@ select:focus {
   color: var(--muted);
   font-size: 12px;
 }
+
+/* ---- OBS tab ---- */
+.obs-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #555c70;
+  vertical-align: middle;
+}
+.obs-dot.ok { background: #35d07f; }
+.obs-dot.wait { background: #e2c27a; }
+.obs-dot.err { background: #e23b50; }
+.obs-card { max-width: 820px; margin-bottom: 16px; }
+.obs-toggle, .obs-radio { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.obs-grid { display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 10px; align-items: end; }
+.obs-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.obs-status { margin: 12px 0 0; font-weight: 600; }
+.obs-status.ok { color: #35d07f; }
+.obs-status.wait { color: #e2c27a; }
+.obs-status.err { color: #ff7b8a; }
+.obs-status.off { color: #9aa3bd; }
+.obs-scenes { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.obs-scene-row { display: grid; grid-template-columns: 1fr 260px auto 48px; gap: 10px; align-items: center; }
+.obs-scene-row .hint { display: block; margin: 0; }
+.obs-live { font-size: 11px; font-weight: 800; color: #fff; background: #e23b50; border-radius: 3px; padding: 2px 6px; text-align: center; }
+.obs-radio, .obs-toggle { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); }
+.obs-radio input, .obs-toggle input { width: auto; margin: 0; }
+.obs-radio strong { white-space: nowrap; }

@@ -19,6 +19,7 @@ import { reloadData, startStateSocket, subscribeData } from "./state.js";
 import { initBroadcast, renderBroadcast, update as updateBroadcast } from "./broadcast.js";
 import { confirmDialog } from "./dialog.js";
 import { championChoices } from "/shared/champions.js";
+import "./obs.js";
 
 function getSlotLabel(slotId) {
   return SLOT_LABELS[slotId] || slotId;
