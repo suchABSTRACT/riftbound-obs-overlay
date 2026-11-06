@@ -4,6 +4,7 @@ import { parseDecklist, resolveDecklist, resolveTTS } from "../decklist.js";
 import { getGameAdapter } from "../gameAdapters/index.js";
 import { cacheMany } from "./cardCacheService.js";
 import { warmBattlefieldText } from "../cardText.js";
+import { warmSpotlightArt } from "../legendArt.js";
 import { activeGameData, persistAndBroadcast } from "./stateService.js";
 import { prefillChampion } from "./matchService.js";
 import { requirePlayer } from "./playerService.js";
@@ -24,6 +25,7 @@ export async function savePlayerDeck(playerId, incoming = {}) {
   dropStalePicks(playerId, deck);
   await persistAndBroadcast();
   warmBattlefieldText(persistAndBroadcast); // battlefield rules text, in the background
+  warmSpotlightArt(persistAndBroadcast); // decklist Spotlight art, in the background
   return deck;
 }
 

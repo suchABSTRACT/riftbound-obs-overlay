@@ -36,9 +36,17 @@
   -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent);
   mask-image: linear-gradient(90deg, #000 45%, transparent);
 }
-/* Only the art half of the card: zoomed in from the top so the printed
-   name / rules box stays off-screen. */
-.dl-art img {
+/* Full art (League splash or a custom image): fills the spotlight. */
+.dl-art img.full {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Fallback — the Legend card itself: only its art half, zoomed in from the
+   top so the printed name / rules box stays off-screen. */
+.dl-art img.card {
   position: absolute;
   left: 50%;
   top: -6%;

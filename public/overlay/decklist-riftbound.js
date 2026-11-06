@@ -43,6 +43,24 @@ export function fitGrid(n, w, h, { gap = 16, max = 170, min = 50 } = {}) {
   return { cols: best.cols, card: Math.max(min, Math.floor(best.card)) };
 }
 
+/** Spotlight art: the Legend's full art if we have it, else its card cropped. */
+export const SPOT_DEFAULT = { x: 50, y: 30, zoom: 1 };
+export function spotFraming(legendId, framing) {
+  const f = (legendId && framing?.[`spot:${legendId}`]) || {};
+  return {
+    x: Number.isFinite(f.x) ? f.x : SPOT_DEFAULT.x,
+    y: Number.isFinite(f.y) ? f.y : SPOT_DEFAULT.y,
+    zoom: Number.isFinite(f.zoom) ? f.zoom : SPOT_DEFAULT.zoom,
+  };
+}
+export function spotArtHtml(legend, framing) {
+  if (legend?.spotLocal) {
+    const f = spotFraming(legend.id, framing);
+    return `<img class="full" src="${legend.spotLocal}" alt="" style="object-position:${f.x}% ${f.y}%;transform-origin:${f.x}% ${f.y}%;transform:scale(${f.zoom})" />`;
+  }
+  return big(legend) ? `<img class="card" src="${big(legend)}" alt="" />` : "";
+}
+
 function deckPlayer(state) {
   const pid = state.display?.broadcast?.decklist?.player === "p2" ? "p2" : "p1";
   return { pid, i: pid === "p1" ? 0 : 1, player: state.players?.[pid === "p1" ? 0 : 1] || {} };
@@ -111,7 +129,7 @@ function bodyHtml(state) {
   const a = (cls, delay, dur = 0.7) => `mp-item ${cls}" style="--mp-delay:${delay}ms;--mp-duration:${dur}s`;
 
   return `
-    <div class="dl-art ${a("mx-a-fade", 0, 0.8)}">${big(legend) ? `<img src="${big(legend)}" alt="" />` : ""}</div>
+    <div class="dl-art ${a("mx-a-fade", 0, 0.8)}">${spotArtHtml(legend, state.display?.broadcast?.framing)}</div>
     ${champ && big(champ) ? `<div class="dl-ch ${a("dl-a-card", 350, 0.9)}"><img src="${big(champ)}" alt="" /></div>` : ""}
     <div class="dl-id ${a("mx-a-rise", 200, 0.7)}" data-dl="id">
       <span class="dl-k">Decklist</span>

@@ -52,6 +52,8 @@ function defaultBroadcast() {
     framing: {},
     // Decklist screen: whose deck is shown.
     decklist: { player: "p1" },
+    // Decklist Spotlight art per Legend: legendId -> { skin, url }.
+    spotArt: {},
   };
 }
 
@@ -329,6 +331,7 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   bc.show ||= {};
   if (!bc.framing || typeof bc.framing !== "object") bc.framing = {};
   if (!bc.decklist || typeof bc.decklist !== "object") bc.decklist = { player: "p1" };
+  if (!bc.spotArt || typeof bc.spotArt !== "object") bc.spotArt = {};
   if (bc.decklist.player !== "p1" && bc.decklist.player !== "p2") bc.decklist.player = "p1";
   for (const k of BROADCAST_SHOW_KEYS) if (typeof bc.show[k] !== "boolean") bc.show[k] = true;
 

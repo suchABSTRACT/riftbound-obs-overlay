@@ -10,6 +10,8 @@ import {
   timerAction,
   updateBroadcast,
 } from "../services/broadcastService.js";
+import { setSpotlightArt } from "../legendArt.js";
+import { persistAndBroadcast } from "../services/stateService.js";
 
 export const broadcastRoutes = Router();
 
@@ -23,6 +25,8 @@ const wrap = (fn) => async (req, res) => {
 
 // Control panel
 broadcastRoutes.post("/broadcast", wrap((req) => updateBroadcast(req.body ?? {})));
+// Decklist Spotlight art: { legendId, skin?, url? }
+broadcastRoutes.post("/broadcast/spotlight", wrap((req) => setSpotlightArt(req.body ?? {}, persistAndBroadcast)));
 broadcastRoutes.post("/broadcast/timer", wrap((req) => timerAction(req.body?.op, req.body ?? {})));
 broadcastRoutes.post("/broadcast/first", wrap((req) => setFirstPlayer(req.body?.player ?? null)));
 broadcastRoutes.post("/broadcast/stat", wrap((req) => setStat(req.body ?? {})));

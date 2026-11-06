@@ -8,6 +8,7 @@ import { logStartup } from "./startupLog.js";
 import { initDb } from "./db.js";
 import { initHub, closeHub } from "./hub.js";
 import { warmBattlefieldText } from "./cardText.js";
+import { warmSpotlightArt } from "./legendArt.js";
 import { persistAndBroadcast } from "./services/stateService.js";
 import { router } from "./routes.js";
 import { startStreamDeckSafe, stopStreamDeckSafe } from "./streamdeckApi.js";
@@ -78,6 +79,7 @@ export async function startServer(options = {}) {
   if (IS_RELEASE) console.log(`  Data folder              : ${DATA_DIR}`);
   /* Stream Deck HID runs in a separate worker — auto-starts shortly after boot */
   setTimeout(() => warmBattlefieldText(persistAndBroadcast), 5000);
+  setTimeout(() => warmSpotlightArt(persistAndBroadcast), 6000);
   setTimeout(() => {
     startStreamDeckSafe().catch((err) => logStartup("[streamdeck] auto-start failed", err));
   }, 3000);

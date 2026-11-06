@@ -12,6 +12,7 @@ import {
   fitAllBfImgs,
   watchBfImgs,
 } from "/shared/artFraming.js";
+import { spotArtHtml, spotFraming } from "/overlay/decklist-riftbound.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
@@ -102,12 +103,13 @@ function playerCol(pid) {
         ).join("")}
       </div>
       ${runeBlock(pid)}
-      <details class="bcx-art" data-art-open="${pid}" data-bf-ids="${bfIds(pid).join(",")}">
+      <details class="bcx-art" data-art-open="${pid}" data-bf-ids="${artKey(pid)}">
         <summary>Art framing</summary>
         <p class="hint">Pick the part of the card art shown in the panel and on the matchup screen. Saved per card.</p>
         ${artRow(pid, "legend", "Legend")}
         ${artRow(pid, "champion", "Champion")}
         ${bfIds(pid).map((_, i) => artRow(pid, `bf${i}`, "Battlefield")).join("")}
+        ${artRow(pid, "spot", "Decklist spotlight")}
       </details>
     </div>`;
 }
@@ -151,6 +153,12 @@ function runeBlock(pid) {
     </div>`;
 }
 
+/** What the Art framing rows depend on (rebuild when it changes). */
+function artKey(pid) {
+  const p = data()?.players?.find((x) => x.id === pid);
+  return [p?.deck?.legend || "", ...bfIds(pid)].join(",");
+}
+
 function bfIds(pid) {
   const p = data()?.players?.find((x) => x.id === pid);
   return (p?.deck?.battlefields || []).map((e) => e?.id).filter(Boolean);
@@ -168,12 +176,18 @@ function artRow(pid, slot, label) {
     : "";
   const range = (k, name) =>
     `<label class="bcx-art-range"><span>${name}</span><input type="range" data-art="${k}" min="${ART_LIMITS[k].min}" max="${ART_LIMITS[k].max}" step="${ART_LIMITS[k].step}" /></label>`;
+  const spot =
+    slot === "spot"
+      ? `<label class="bcx-art-range"><span>Skin</span><input type="number" min="0" max="99" step="1" data-spot-skin title="0 = the champion's default splash; other numbers are its skins" /></label>
+        <label class="bcx-art-range"><span>Image link</span><input type="url" placeholder="Optional: paste a link to your own art" data-spot-url /></label>
+        <p class="hint" data-spot-note></p>`
+      : "";
   return `
     <div class="bcx-art-row bcx-art-${isBf ? "bf" : slot}" data-art-slot="${pid}:${slot}">
       <div class="bcx-art-prev" data-art-prev></div>
       <div class="bcx-art-ctl">
         <div class="bcx-art-head"><strong>${label}</strong> <span class="hint" data-art-name></span></div>
-        ${rot}${range("zoom", "Zoom")}${range("x", "Left / right")}${range("y", "Up / down")}
+        ${rot}${spot}${range("zoom", "Zoom")}${range("x", "Left / right")}${range("y", "Up / down")}
         <button type="button" class="btn ghost small" data-art-reset>Reset</button>
       </div>
     </div>`;
@@ -183,6 +197,12 @@ function artRow(pid, slot, label) {
 function artCard(pid, slot) {
   const d = data();
   const p = d?.players?.find((x) => x.id === pid);
+  if (slot === "spot") {
+    // Framing is stored under "spot:<legend>" so it doesn't clash with the panel's.
+    const legendId = p?.deck?.legend || null;
+    const card = legendId ? d?.cardsCache?.[legendId] : null;
+    return { id: legendId ? `spot:${legendId}` : null, legendId, card, src: card?.spotLocal || card?.imageLocal || "" };
+  }
   const id = slot.startsWith("bf")
     ? bfIds(pid)[Number(slot.slice(2))]
     : slot === "legend"
@@ -207,16 +227,35 @@ function paintArtRow(row, { force = false } = {}) {
   row.classList.toggle("disabled", !src);
   row.querySelector("[data-art-name]").textContent = card?.name || "— no card —";
   const isBf = slot.startsWith("bf");
-  const f = isBf ? bfFramingFor(id, framingMap()) : framingFor(id, framingMap());
-  paintPreview(row, src, f, isBf);
+  if (slot === "spot") {
+    const legendId = artCard(pid, slot).legendId;
+    const s = data()?.display?.broadcast?.spotArt?.[legendId] || {};
+    const skin = row.querySelector("[data-spot-skin]");
+    const url = row.querySelector("[data-spot-url]");
+    if (skin && (force || document.activeElement !== skin)) skin.value = String(s.skin ?? 0);
+    if (url && (force || document.activeElement !== url)) url.value = s.url || "";
+    [skin, url].forEach((i) => i && (i.disabled = !legendId));
+    const note = row.querySelector("[data-spot-note]");
+    if (note) note.textContent = card?.spotNote || (legendId ? "Looking for the champion's art…" : "");
+  }
+  const f = slot === "spot" ? spotFraming(artCard(pid, slot).legendId, framingMap()) : isBf ? bfFramingFor(id, framingMap()) : framingFor(id, framingMap());
+  paintPreview(row, src, f, isBf, slot === "spot" ? card : null);
   row.querySelectorAll("[data-art]").forEach((input) => {
     input.disabled = !src;
     if (force || document.activeElement !== input) input.value = String(f[input.dataset.art]);
   });
 }
 
-function paintPreview(row, src, f, isBf) {
+function paintPreview(row, src, f, isBf, spotCard = null) {
   const prev = row.querySelector("[data-art-prev]");
+  if (spotCard) {
+    const html = spotArtHtml(spotCard, { [`spot:${spotCard.id}`]: f });
+    if (prev.dataset.html !== html) {
+      prev.dataset.html = html;
+      prev.innerHTML = html;
+    }
+    return;
+  }
   if (!isBf) {
     prev.setAttribute("style", src ? artStyle(src, f) : "");
     return;
@@ -310,7 +349,7 @@ export function update() {
     const want = domainsOf(pid).join(",");
     if ((box?.dataset.domains || "") !== want) return build();
     const art = root.querySelector(`[data-art-open="${pid}"]`);
-    if (art && (art.dataset.bfIds || "") !== bfIds(pid).join(",")) return build();
+    if (art && (art.dataset.bfIds || "") !== artKey(pid)) return build();
     const runes = stats(pid).runes || {};
     root.querySelectorAll(`[data-bcx-runeval^="${pid}:"]`).forEach((el) => {
       const [, d, k] = el.dataset.bcxRuneval.split(":");
@@ -359,9 +398,9 @@ function bind() {
     const f = readRow(row);
     framingMap()[cardId] = f.rot === "auto" ? { ...f, rot: undefined } : f;
     const [pid, slot] = row.dataset.artSlot.split(":");
-    const { src } = artCard(pid, slot);
+    const { src, card } = artCard(pid, slot);
     const isBf = slot.startsWith("bf");
-    paintPreview(row, src, isBf ? bfFramingFor(cardId, framingMap()) : f, isBf);
+    paintPreview(row, src, isBf ? bfFramingFor(cardId, framingMap()) : f, isBf, slot === "spot" ? card : null);
     sendFraming(cardId, f);
   });
 
@@ -446,6 +485,30 @@ function bind() {
 
   root.addEventListener("change", async (e) => {
     const t = e.target;
+    if (t.matches("[data-spot-skin], [data-spot-url]")) {
+      const row = t.closest("[data-art-slot]");
+      const [pid] = row.dataset.artSlot.split(":");
+      const { legendId } = artCard(pid, "spot");
+      if (!legendId) return;
+      const note = row.querySelector("[data-spot-note]");
+      if (note) note.textContent = "Fetching art…";
+      const body = t.matches("[data-spot-skin]") ? { legendId, skin: Number(t.value) || 0 } : { legendId, url: t.value.trim() };
+      const r = await post("/api/broadcast/spotlight", body);
+      if (r?.result) {
+        const d = data();
+        d.display.broadcast.spotArt ||= {};
+        d.display.broadcast.spotArt[legendId] = r.result.settings;
+        const entry = d.cardsCache?.[legendId];
+        if (entry) {
+          entry.spotLocal = r.result.spotLocal;
+          entry.spotNote = r.result.note;
+        }
+        paintArtRow(row, { force: true });
+      } else if (note) {
+        note.textContent = "Couldn't update the art.";
+      }
+      return;
+    }
     if (t.matches("[data-bcx-round]")) {
       const r = await post("/api/broadcast", { roundLabel: t.value });
       if (r) toast("Round name updated");
