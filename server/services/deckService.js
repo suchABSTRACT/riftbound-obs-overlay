@@ -1,7 +1,6 @@
 import { getActiveGameId } from "../db.js";
 import { searchByName } from "../cardProvider.js";
 import { parseDecklist, resolveDecklist, resolveTTS } from "../decklist.js";
-import { parseLimitless, resolveLimitless } from "../pokemonDecklist.js";
 import { getGameAdapter } from "../gameAdapters/index.js";
 import { cacheMany } from "./cardCacheService.js";
 import { warmBattlefieldText } from "../cardText.js";
@@ -10,9 +9,6 @@ import { prefillChampion } from "./matchService.js";
 import { requirePlayer } from "./playerService.js";
 
 export async function previewDecklist({ format, text }) {
-  if (getActiveGameId() === "pokemon" && format === "limitless") {
-    return resolveLimitless(parseLimitless(text));
-  }
   if (format === "tts") {
     return resolveTTS(text);
   }
@@ -38,7 +34,6 @@ export async function savePlayerDeck(playerId, incoming = {}) {
  * the old cards), then pre-fill the live game's champion from the new deck.
  */
 function dropStalePicks(playerId, deck) {
-  if (getActiveGameId() === "pokemon") return;
   const gameData = activeGameData();
   const inDeck = new Set([
     deck.legend,

@@ -27,13 +27,6 @@ export async function startServer(options = {}) {
   try {
     await initDb();
     logStartup("initDb OK");
-    try {
-      const { ensureSetIndex } = await import("./pokemonSetIndex.js");
-      await ensureSetIndex();
-      logStartup("Pokemon set index OK");
-    } catch (err) {
-      logStartup("Pokemon set index skipped", err.message);
-    }
   } catch (err) {
     logStartup("initDb FAILED", err);
     throw err;

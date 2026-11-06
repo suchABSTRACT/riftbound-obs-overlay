@@ -1,10 +1,8 @@
 import { getActiveGameId } from "./db.js";
 import * as riftscribe from "./riftscribe.js";
-import * as tcgdex from "./tcgdex.js";
 
 const PROVIDERS = {
   riftbound: riftscribe,
-  pokemon: tcgdex,
 };
 
 export function getCardProvider(gameId = getActiveGameId()) {

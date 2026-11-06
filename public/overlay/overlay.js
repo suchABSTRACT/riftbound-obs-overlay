@@ -14,10 +14,6 @@ const matchupEl = document.getElementById("matchup");
 const sceneEl = document.getElementById("scene");
 const layoutCssEl = document.getElementById("layout-runtime-css");
 const sceneHoleEl = document.getElementById("scene-hole");
-const pokemonOverlayEl = document.createElement("div");
-pokemonOverlayEl.id = "pokemon-overlay";
-pokemonOverlayEl.className = "pokemon-overlay hidden";
-document.body.appendChild(pokemonOverlayEl);
 
 const CARD_SLOTS = new Set(["p1.card", "p2.card"]);
 const HIDE_WHEN_EMPTY = new Set(["p1.card", "p2.card", "p1.battlefield", "p2.battlefield"]);
@@ -25,14 +21,6 @@ const ANIM_TYPES = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
 const SCENE_MANAGED_TEXT = new Set(["score"]);
 const cardAnimState = {};
 
-const MP_DELAY = {
-  pseudo: 400,
-  legend: 800,
-  champion: 1600,
-  battlefields: 2400,
-  battlefieldStagger: 120,
-  vs: 600,
-};
 const MP_EXIT_MS = 400;
 const MP_SCENE_FADE_MS = 450;
 
@@ -147,124 +135,13 @@ function playCardAnimation(el, type, side) {
   if (type === "slide") el.classList.add(side === "p1" ? "anim-from-left" : "anim-from-right");
 }
 
-function escapeText(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-
-function cardImage(card) {
-  return card?.imageLocal || card?.thumbLocal || "";
-}
-
-function prizeBalls(count) {
-  const n = Math.max(0, Math.min(6, Number(count) || 0));
-  return Array.from({ length: 6 }, (_, i) => `<span class="pkm-ball ${i < n ? "filled" : "spent"}"></span>`).join("");
-}
-
-function pokemonSideHtml(state, index, side) {
-  const player = state.players[index] || {};
-  const board = state.game?.pokemon?.[side] || {};
-  const active = board.active;
-  const img = cardImage(active);
-  const bench = Array.from({ length: 5 }, (_, i) => board.bench?.[i] || null);
-  return `
-    <section class="pokemon-side pokemon-${side}">
-      <header class="pkm-player">
-        <div>
-          <strong>${escapeText(player.pseudo || (side === "p1" ? "Player 1" : "Player 2"))}</strong>
-          <span>${escapeText(active?.name || "No active Pokémon")}</span>
-        </div>
-        <div class="pkm-prizes" aria-label="Prize cards left">${prizeBalls(state.game?.score?.[side])}</div>
-      </header>
-      <div class="pkm-active-card ${img ? "" : "empty"}">
-        ${img ? `<img src="${img}" alt="" />` : `<span>ACTIVE</span>`}
-      </div>
-      <div class="pkm-active-info">
-        <div class="pkm-active-title">
-          <strong>${escapeText(active?.name || "Choose an active Pokémon")}</strong>
-          <span>${escapeText(active?.hp ? `${active.hp} HP` : "")}</span>
-        </div>
-      </div>
-      <div class="pkm-bench">
-        ${bench
-          .map((card) => {
-            const benchImg = cardImage(card);
-            return `<div class="pkm-bench-card ${benchImg ? "" : "empty"}">${
-              benchImg ? `<img src="${benchImg}" alt="" /><span>${escapeText(card.name || "")}</span>` : `<span>EMPTY</span>`
-            }</div>`;
-          })
-          .join("")}
-      </div>
-    </section>`;
-}
-
-function renderPokemonOverlay(state) {
-  const show = state.meta?.gameId === "pokemon" && state.display?.mode !== "matchup";
-  pokemonOverlayEl.classList.toggle("hidden", !show);
-  stage.classList.toggle("pokemon-stage-hidden", show);
-  if (!show) return;
-  pokemonOverlayEl.innerHTML = `${pokemonSideHtml(state, 0, "p1")}${pokemonSideHtml(state, 1, "p2")}`;
-}
-
-function isRiftboundMatchup(state) {
-  return (state.meta?.gameId || "riftbound") !== "pokemon";
-}
-
 function hashMatchup(state) {
-  if (isRiftboundMatchup(state)) return `mx|${mxIdentity(state)}`;
-  const parts = [];
-  for (const pl of state.players || []) {
-    parts.push(pl?.pseudo || "");
-    parts.push(pl?.legend?.imageLocal || "");
-    parts.push(pl?.champion?.imageLocal || "");
-    for (const bf of pl?.battlefields || []) parts.push(bf?.thumbLocal || "");
-  }
-  return parts.join("|");
-}
-
-function sideHtml(player, sideClass) {
-  if (!player) return "";
-  const chunks = [];
-
-  chunks.push(
-    `<div class="mp-item mp-pseudo-item" style="--mp-delay:${MP_DELAY.pseudo}ms"><div class="mp-pseudo">${escapeText(player.pseudo || "")}</div></div>`
-  );
-
-  if (player.legend?.imageLocal) {
-    chunks.push(
-      `<div class="mp-item mp-legend-item" style="--mp-delay:${MP_DELAY.legend}ms;--mp-duration:1.3s"><div class="mp-legend"><img src="${player.legend.imageLocal}" alt="" /></div></div>`
-    );
-  }
-
-  if (player.champion?.imageLocal) {
-    chunks.push(
-      `<div class="mp-item mp-champion-item" style="--mp-delay:${MP_DELAY.champion}ms;--mp-duration:1.2s"><div class="mp-champion"><span class="mp-label">Champion</span><img src="${player.champion.imageLocal}" alt="" /></div></div>`
-    );
-  }
-
-  const bfs = (player.battlefields || []).filter((b) => b?.thumbLocal);
-  if (bfs.length) {
-    const imgs = bfs
-      .map((b, i) => {
-        const delay = MP_DELAY.battlefields + i * MP_DELAY.battlefieldStagger;
-        return `<img class="mp-item mp-bf-card" src="${b.thumbLocal}" alt="" style="--mp-delay:${delay}ms;--mp-duration:1s" />`;
-      })
-      .join("");
-    chunks.push(
-      `<div class="mp-battlefields-block"><span class="mp-label mp-item" style="--mp-delay:${MP_DELAY.battlefields}ms">Battlefields</span><div class="mp-battlefields">${imgs}</div></div>`
-    );
-  }
-
-  return `<div class="mp-side ${sideClass}">${chunks.join("")}</div>`;
+  return `mx|${mxIdentity(state)}`;
 }
 
 function buildMatchupDom(state) {
-  const riftbound = isRiftboundMatchup(state);
-  matchupEl.classList.toggle("mx", riftbound);
-  if (riftbound) {
-    mxBuild(matchupEl, state);
-    return;
-  }
-  matchupEl.innerHTML = `${sideHtml(state.players[0], "mp-side-left")}<div class="mp-vs mp-item mp-vs-item" style="--mp-delay:${MP_DELAY.vs}ms;--mp-duration:0.9s">VS</div>${sideHtml(state.players[1], "mp-side-right")}`;
+  matchupEl.classList.add("mx");
+  mxBuild(matchupEl, state);
 }
 
 function preloadMatchupImages(root) {
@@ -474,7 +351,6 @@ function render(state, info = { type: "state", sections: [] }) {
     sections.has("match");
 
   if (sceneChanged) renderScene(state);
-  renderPokemonOverlay(state);
 
   const layout = normalizeLayout(state.layout);
   if (layoutChanged) {
@@ -492,7 +368,7 @@ function render(state, info = { type: "state", sections: [] }) {
       enterMatchup(state);
     } else if (hashMatchup(state) !== matchupHash) {
       enterMatchup(state);
-    } else if (isRiftboundMatchup(state)) {
+    } else {
       // Same players/format: update score, strip and champions in place.
       mxUpdate(matchupEl, state);
     }

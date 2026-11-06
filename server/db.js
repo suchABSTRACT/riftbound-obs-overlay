@@ -26,10 +26,6 @@ function makeGame() {
     // Broadcast overlay: who goes first this game + board counters.
     first: null,
     stats: { p1: defaultStats(), p2: defaultStats() },
-    pokemon: {
-      p1: { active: null, bench: [] },
-      p2: { active: null, bench: [] },
-    },
   };
 }
 
@@ -41,7 +37,6 @@ const FORMATS = {
 
 /** Card reveal animations for on-demand display (overlay CSS). */
 const CARD_ANIMATIONS = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
-const POKEMON_MAX_PRIZES = 6;
 
 const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "runes", "record", "timer", "results"];
 
@@ -77,8 +72,6 @@ function defaultMatch(format = "bo3") {
     games: Array.from({ length: n }, makeGame),
   };
 }
-
-const POKEMON_LAYOUT_VERSION = 2;
 
 const CARD_PORTRAIT = 744 / 1039;
 const CARD_LANDSCAPE = 1039 / 744;
@@ -184,37 +177,8 @@ export function layoutPreset(name) {
   return LAYOUT_PRESETS[name]?.() || null;
 }
 
-function defaultPokemonLayout() {
-  const cardW = 10;
-  const cardH = slotHeight(cardW, CARD_PORTRAIT);
-  return {
-    "p1.pseudo": { x: 2, y: 2, width: 14, height: 5, visible: true, fontSize: 3.4, align: "center", color: "#ffffff" },
-    "p2.pseudo": { x: 84, y: 2, width: 14, height: 5, visible: true, fontSize: 3.4, align: "center", color: "#ffffff" },
-    score: { x: 42, y: 3, width: 16, height: 7, visible: false, fontSize: 5, align: "center", color: "#ffffff" },
-    playArea: { x: 16, y: 10, width: 68, height: 88, visible: true },
-    "match.tally": {
-      x: 16,
-      y: 88,
-      width: 68,
-      height: 10,
-      visible: true,
-      fontSize: 2.2,
-      align: "center",
-      color: "#e8e8e8",
-    },
-    "p1.card": { x: 2, y: 8, width: cardW, height: cardH, visible: true },
-    "p2.card": { x: 88, y: 8, width: cardW, height: cardH, visible: true },
-    "p1.legend": { x: 2, y: 16, width: 11, height: 27.3, visible: false },
-    "p2.legend": { x: 86, y: 16, width: 11, height: 27.3, visible: false },
-    "p1.battlefield": { x: 2, y: 44.3, width: 14, height: 17.8, visible: false },
-    "p2.battlefield": { x: 84, y: 44.3, width: 14, height: 17.8, visible: false },
-    "p1.champion": { x: 2, y: 86.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#cccccc" },
-    "p2.champion": { x: 82, y: 86.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#cccccc" },
-  };
-}
-
 export function defaultLayoutForGame(gameId = DEFAULT_GAME_ID) {
-  return gameId === "pokemon" ? defaultPokemonLayout() : defaultLayout();
+  return defaultLayout();
 }
 
 export function defaultGameData(gameId = DEFAULT_GAME_ID) {
@@ -275,7 +239,7 @@ function migrateFlatCardFiles() {
 
   for (const name of entries) {
     const src = join(root, name);
-    if (name === DEFAULT_GAME_ID || name === "pokemon") continue;
+    if (name === DEFAULT_GAME_ID) continue;
     try {
       if (!statSync(src).isFile()) continue;
       renameSync(src, join(dest, name));
@@ -303,11 +267,6 @@ function migrateGameCardPaths(gameData, gameId) {
 }
 
 function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
-  if (gameId === "pokemon" && (gameData.layoutVersion ?? 0) < POKEMON_LAYOUT_VERSION) {
-    gameData.layout = defaultPokemonLayout();
-    gameData.layoutVersion = POKEMON_LAYOUT_VERSION;
-  }
-
   const defaults = defaultGameData(gameId);
   for (const key of Object.keys(defaults)) {
     if (gameData[key] === undefined) gameData[key] = defaults[key];
@@ -371,7 +330,7 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   for (const slot of RETIRED_SLOTS) delete gameData.layout?.[slot];
   // Broadcast blocks were redesigned: move them to the new default spots once,
   // keeping whether the broadcast layout is in use (rune tracks follow panels).
-  if (gameId !== "pokemon" && (gameData.broadcastLayoutVersion ?? 1) < BROADCAST_LAYOUT_VERSION && gameData.layout) {
+  if ((gameData.broadcastLayoutVersion ?? 1) < BROADCAST_LAYOUT_VERSION && gameData.layout) {
     const using = gameData.layout["p1.panel"]?.visible === true || gameData.layout.scoreboard?.visible === true;
     for (const [k, v] of Object.entries(BROADCAST_BLOCKS)) {
       gameData.layout[k] = { ...v, visible: using };
@@ -389,29 +348,11 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
     if (!g.score || typeof g.score !== "object") g.score = { p1: 0, p2: 0 };
     if (typeof g.score.p1 !== "number") g.score.p1 = 0;
     if (typeof g.score.p2 !== "number") g.score.p2 = 0;
-    if (!g.pokemon || typeof g.pokemon !== "object") g.pokemon = makeGame().pokemon;
-    for (const pid of ["p1", "p2"]) {
-      const side = g.pokemon[pid];
-      if (!side || typeof side !== "object") {
-        g.pokemon[pid] = { active: null, bench: [] };
-      } else {
-        side.active ||= null;
-        side.bench = Array.isArray(side.bench) ? side.bench.filter(Boolean).slice(0, 5) : [];
-      }
-      if (gameId === "pokemon") {
-        g.score[pid] = Math.max(0, Math.min(POKEMON_MAX_PRIZES, g.score[pid]));
-      }
-    }
+    delete g.pokemon; // left over from the Pokémon mode
   }
 
-  if (gameId === "pokemon") {
-    for (const player of gameData.players || []) {
-      getGameAdapter(gameId).ensurePlayerDeck(player);
-    }
-  } else {
-    for (const player of gameData.players || []) {
-      getGameAdapter(gameId).ensurePlayerDeck(player);
-    }
+  for (const player of gameData.players || []) {
+    getGameAdapter(gameId).ensurePlayerDeck(player);
   }
 }
 
@@ -459,6 +400,7 @@ export async function initDb() {
   db.data.session.activeGame = DEFAULT_GAME_ID; // Riftbound-only build
 
   db.data.games ||= {};
+  delete db.data.games.pokemon; // Pokémon mode was removed
   for (const game of listGames()) {
     if (!db.data.games[game.id]) db.data.games[game.id] = defaultGameData(game.id);
     migrateGameCardPaths(db.data.games[game.id], game.id);
@@ -476,11 +418,9 @@ export {
   BROADCAST_SHOW_KEYS,
   defaultBroadcast,
   defaultLayout,
-  defaultPokemonLayout,
   defaultMatch,
   makePlayer,
   FORMATS,
   CARD_ANIMATIONS,
   defaultDisplay,
-  POKEMON_MAX_PRIZES,
 };

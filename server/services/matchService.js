@@ -1,4 +1,4 @@
-import { defaultDisplay, defaultMatch, FORMATS, POKEMON_MAX_PRIZES, getActiveGameId } from "../db.js";
+import { defaultDisplay, defaultMatch, FORMATS } from "../db.js";
 import { PLAYER_IDS } from "../constants.js";
 import { cacheMany } from "./cardCacheService.js";
 import { activeGameData, persistAndBroadcast } from "./stateService.js";
@@ -14,7 +14,6 @@ function currentGame(match) {
  * sideboarding, and never overwrites a pick.
  */
 export function prefillChampion(gameData) {
-  if (getActiveGameId() === "pokemon") return;
   const match = gameData.match;
   const i = match.currentGame;
   const game = match.games[i];
@@ -26,20 +25,6 @@ export function prefillChampion(gameData) {
     const deckChamp = (gameData.players || []).find((p) => p.id === pid)?.deck?.champions?.[0] || null;
     game.champion[pid] = prev || deckChamp;
   }
-}
-
-function ensurePokemonBoard(game) {
-  game.pokemon ||= {};
-  for (const pid of PLAYER_IDS) {
-    const side = game.pokemon[pid];
-    if (!side || typeof side !== "object") {
-      game.pokemon[pid] = { active: null, bench: [] };
-    } else {
-      side.active ||= null;
-      side.bench = Array.isArray(side.bench) ? side.bench.filter(Boolean).slice(0, 5) : [];
-    }
-  }
-  return game.pokemon;
 }
 
 export async function resetMatch() {
@@ -71,7 +56,6 @@ export async function setMatchFormat(format) {
         p1: { hand: 0, level: 0, runes: {} },
         p2: { hand: 0, level: 0, runes: {} },
       },
-      pokemon: { p1: { active: null, bench: [] }, p2: { active: null, bench: [] } },
     });
   }
   if (match.games.length > need) match.games.length = need;
@@ -111,10 +95,6 @@ export async function updateMatch({ score, currentGame: currentGameIndex } = {})
     if (game) {
       if (typeof score.p1 === "number") game.score.p1 = Math.max(0, score.p1);
       if (typeof score.p2 === "number") game.score.p2 = Math.max(0, score.p2);
-      if (getActiveGameId() === "pokemon") {
-        game.score.p1 = Math.min(POKEMON_MAX_PRIZES, game.score.p1);
-        game.score.p2 = Math.min(POKEMON_MAX_PRIZES, game.score.p2);
-      }
     }
   }
   await persistAndBroadcast(["match", "game"]);
@@ -159,8 +139,7 @@ export async function hotScore({ player, op }) {
   if (!game) throw Object.assign(new Error("invalid game"), { status: 400 });
   if (!game.score) game.score = { p1: 0, p2: 0 };
   const delta = op === "inc" ? 1 : -1;
-  const max = getActiveGameId() === "pokemon" ? POKEMON_MAX_PRIZES : Number.POSITIVE_INFINITY;
-  game.score[player] = Math.min(max, Math.max(0, (game.score[player] || 0) + delta));
+  game.score[player] = Math.max(0, (game.score[player] || 0) + delta);
   await persistAndBroadcast(["game"]);
   return {
     player,
@@ -169,30 +148,3 @@ export async function hotScore({ player, op }) {
     score: game.score,
   };
 }
-
-export async function updatePokemonBoard({ gameIndex, player, active, bench } = {}) {
-  if (getActiveGameId() !== "pokemon") {
-    throw Object.assign(new Error("pokemon board is only available in pokemon mode"), { status: 400 });
-  }
-  if (!validatePlayerId(player)) throw Object.assign(new Error("invalid player"), { status: 400 });
-
-  const gameData = activeGameData();
-  const index = typeof gameIndex === "number" ? gameIndex : gameData.match.currentGame;
-  const game = gameData.match.games[index];
-  if (!game) throw Object.assign(new Error("invalid gameIndex"), { status: 400 });
-
-  const p = findPlayer(player);
-  const allowed = new Set((p?.deck?.pokemon || []).map((entry) => entry.id).filter(Boolean));
-  const cleanActive = active && allowed.has(active) ? active : null;
-  const cleanBench = (Array.isArray(bench) ? bench : [])
-    .filter((id) => id && allowed.has(id) && id !== cleanActive)
-    .slice(0, 5);
-  const idsToCache = [cleanActive, ...cleanBench].filter(Boolean);
-  if (idsToCache.length) await cacheMany(idsToCache);
-
-  const board = ensurePokemonBoard(game);
-  board[player] = { active: cleanActive, bench: cleanBench };
-  await persistAndBroadcast(["game"]);
-  return { gameIndex: index, player, pokemon: board[player], game };
-}
-

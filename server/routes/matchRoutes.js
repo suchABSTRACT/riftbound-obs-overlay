@@ -6,7 +6,6 @@ import {
   setMatchFormat,
   setSelection,
   updateMatch,
-  updatePokemonBoard,
   winGame,
 } from "../services/matchService.js";
 
@@ -47,14 +46,6 @@ matchRoutes.post("/match", async (req, res) => {
 matchRoutes.post("/match/selection", async (req, res) => {
   try {
     res.json({ ok: true, game: await setSelection(req.body ?? {}) });
-  } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
-  }
-});
-
-matchRoutes.post("/match/pokemon-board", async (req, res) => {
-  try {
-    res.json({ ok: true, ...(await updatePokemonBoard(req.body ?? {})) });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

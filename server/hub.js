@@ -11,13 +11,6 @@ function card(id) {
   return getCachedCard(id);
 }
 
-function pokemonSide(side = {}) {
-  return {
-    active: card(side.active),
-    bench: (Array.isArray(side.bench) ? side.bench : []).map(card).filter(Boolean),
-  };
-}
-
 function getStateContext() {
   const gameData = getActiveGameData();
   const { players, match, display, layout, cardsCache } = gameData;
@@ -76,10 +69,6 @@ export function buildStateSections() {
       selection: {
         battlefield: { p1: game.battlefield?.p1 ?? null, p2: game.battlefield?.p2 ?? null },
         champion: { p1: game.champion?.p1 ?? null, p2: game.champion?.p2 ?? null },
-      },
-      pokemon: {
-        p1: pokemonSide(game.pokemon?.p1),
-        p2: pokemonSide(game.pokemon?.p2),
       },
     },
     display: {

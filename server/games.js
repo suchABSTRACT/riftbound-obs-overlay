@@ -5,12 +5,6 @@ export const GAMES = [
     overlayPath: "/overlay",
     controlPath: "/control",
   },
-  {
-    id: "pokemon",
-    name: "Pokémon TCG",
-    overlayPath: "/overlay",
-    controlPath: "/control",
-  },
 ];
 
 const GAME_MAP = new Map(GAMES.map((g) => [g.id, g]));

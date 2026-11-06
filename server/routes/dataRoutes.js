@@ -22,7 +22,7 @@ dataRoutes.get("/data", (_req, res) => {
     players: gameData.players.map((p) => ({
       ...p,
       displayCards: displayCardEntries(p.deck, gameData.cardsCache, activeGame),
-      runeDomains: activeGame === "pokemon" ? [] : runeDomains(p.deck, gameData.cardsCache),
+      runeDomains: runeDomains(p.deck, gameData.cardsCache),
     })),
     match: gameData.match,
     display: gameData.display,

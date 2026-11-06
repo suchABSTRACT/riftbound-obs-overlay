@@ -479,10 +479,6 @@ export function initBroadcast({ toast: toastFn } = {}) {
 /** Full (re)render, e.g. after a data reload or player rename. */
 export function renderBroadcast() {
   if (!root || !data()) return;
-  if (data().activeGame === "pokemon") {
-    root.classList.add("hidden");
-    return;
-  }
   root.classList.remove("hidden");
   build();
 }
