@@ -910,6 +910,17 @@ select:focus {
 .bcx-art-champion .bcx-art-prev {
   width: 120px;
 }
+/* Battlefield: same shape as a matchup-screen tile (309×213) */
+.bcx-art-bf .bcx-art-prev {
+  width: 132px;
+  position: relative;
+  overflow: hidden;
+  container-type: size;
+}
+.bcx-art-range select {
+  width: 100%;
+  font-size: 12px;
+}
 .bcx-art-ctl {
   flex: 1;
   min-width: 0;

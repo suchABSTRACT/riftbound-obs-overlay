@@ -12,6 +12,7 @@
 //   right x 50.25vw → 99.75vw, y 0 → 77.6vh
 
 import { PANEL_DEFS, fils, shape } from "./broadcast-panels.js";
+import { bfFramingFor, bfImgHtml, fitAllBfImgs, watchBfImgs } from "/shared/artFraming.js";
 
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -92,7 +93,8 @@ function tileKey(state, { pid, g }) {
   const h = state.match?.history?.[g] || {};
   const bf = h.battlefield?.[pid];
   const cur = state.match?.currentGame === g && !state.match?.winner;
-  return [pid, g, bf?.id || "", (bf?.text || "").length, h.winner || "", cur ? 1 : 0].join(":");
+  const f = bf?.id ? Object.values(bfFramingFor(bf.id, state.display?.broadcast?.framing)).join(",") : "";
+  return [pid, g, bf?.id || "", (bf?.text || "").length, h.winner || "", cur ? 1 : 0, f].join(":");
 }
 
 /** Rules text → HTML: keywords in [brackets] bold, line breaks kept. */
@@ -123,7 +125,7 @@ function tileHtml(state, t, delayMs) {
   const name = bf ? esc(bf.name || "") : isCurrent ? "Not picked yet" : played ? "—" : "Not played";
   return `
     <div class="${cls}${animAttr}" data-key="${esc(tileKey(state, t))}">
-      <div class="mx-art">${bf && imgOf(bf) ? `<img src="${imgOf(bf)}" alt="" />` : ""}</div>
+      <div class="mx-art">${bf && imgOf(bf) ? bfImgHtml(imgOf(bf), bfFramingFor(bf.id, state.display?.broadcast?.framing)) : ""}</div>
       <div class="mx-bf">
         <span class="mx-bf-name">${name}</span>
         ${bf?.text ? `<span class="mx-bf-text">${rulesHtml(bf.text)}</span>` : ""}
@@ -142,6 +144,7 @@ function stripInner(state, animate) {
 // ---- public API --------------------------------------------------------------------
 
 export function mxBuild(root, state) {
+  watchBfImgs(root);
   const n = state.match?.gameCount || 3;
   root.innerHTML = `
     <div class="mx-root bx">
@@ -159,6 +162,7 @@ export function mxBuild(root, state) {
         <div class="mx-tiles" data-mx="strip" style="--mx-tiles:${n * 2}">${stripInner(state, true)}</div>
       </div>
     </div>`;
+  fitAllBfImgs(root);
 }
 
 /**
@@ -196,6 +200,7 @@ export function mxUpdate(root, state) {
     strip.style.setProperty("--mx-tiles", tiles.length);
     strip.parentElement.classList.toggle("dense", tiles.length > 6);
     strip.innerHTML = stripInner(state, false);
+    fitAllBfImgs(strip);
     return;
   }
   tiles.forEach((t, idx) => {
@@ -205,6 +210,7 @@ export function mxUpdate(root, state) {
     tmp.innerHTML = tileHtml(state, t, null).trim();
     const fresh = tmp.firstElementChild;
     el.replaceWith(fresh);
+    fitAllBfImgs(fresh);
     flash(fresh);
   });
 }

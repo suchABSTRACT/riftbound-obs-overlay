@@ -145,7 +145,7 @@ export async function setAllRunes(player, mode = "ready") {
 }
 
 /** Save how one card's art is framed in the player panels (or reset it). */
-export async function setFraming({ cardId, x, y, zoom, reset } = {}) {
+export async function setFraming({ cardId, x, y, zoom, rot, reset } = {}) {
   if (!cardId || typeof cardId !== "string") throw bad("cardId required");
   const bcs = broadcast();
   bcs.framing ||= {};
@@ -158,6 +158,11 @@ export async function setFraming({ cardId, x, y, zoom, reset } = {}) {
     if (x !== undefined && Number.isFinite(Number(x))) next.x = Math.round(clamp(x, 0, 100));
     if (y !== undefined && Number.isFinite(Number(y))) next.y = Math.round(clamp(y, 0, 100));
     if (zoom !== undefined && Number.isFinite(Number(zoom))) next.zoom = Math.round(clamp(zoom, 1, 4) * 100) / 100;
+    // Battlefields: rotation of the image ("auto" = turn sideways files upright).
+    if (rot !== undefined) {
+      if ([0, 90, -90].includes(Number(rot)) && rot !== "auto" && rot !== "") next.rot = Number(rot);
+      else delete next.rot;
+    }
     bcs.framing[cardId] = next;
   }
   await persistAndBroadcast(["display"]);

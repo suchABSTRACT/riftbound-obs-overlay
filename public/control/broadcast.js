@@ -3,7 +3,15 @@
 // which items the overlay shows. Everything also has a Stream Deck hot URL.
 import { api } from "./api.js";
 import { getData } from "./state.js";
-import { ART_LIMITS, artStyle, framingFor } from "/shared/artFraming.js";
+import {
+  ART_LIMITS,
+  artStyle,
+  framingFor,
+  bfFramingFor,
+  bfImgHtml,
+  fitAllBfImgs,
+  watchBfImgs,
+} from "/shared/artFraming.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
@@ -93,11 +101,12 @@ function playerCol(pid) {
         ).join("")}
       </div>
       ${runeBlock(pid)}
-      <details class="bcx-art" data-art-open="${pid}">
+      <details class="bcx-art" data-art-open="${pid}" data-bf-ids="${bfIds(pid).join(",")}">
         <summary>Art framing</summary>
-        <p class="hint">Pick the part of the card art shown in the panel. Saved per card.</p>
+        <p class="hint">Pick the part of the card art shown in the panel and on the matchup screen. Saved per card.</p>
         ${artRow(pid, "legend", "Legend")}
         ${artRow(pid, "champion", "Champion")}
+        ${bfIds(pid).map((_, i) => artRow(pid, `bf${i}`, "Battlefield")).join("")}
       </details>
     </div>`;
 }
@@ -141,15 +150,29 @@ function runeBlock(pid) {
     </div>`;
 }
 
+function bfIds(pid) {
+  const p = data()?.players?.find((x) => x.id === pid);
+  return (p?.deck?.battlefields || []).map((e) => e?.id).filter(Boolean);
+}
+
 function artRow(pid, slot, label) {
+  const isBf = slot.startsWith("bf");
+  const rot = isBf
+    ? `<label class="bcx-art-range"><span>Rotate</span><select data-art="rot">
+        <option value="auto">Auto (turn sideways images upright)</option>
+        <option value="0">None</option>
+        <option value="90">90° clockwise</option>
+        <option value="-90">90° anticlockwise</option>
+      </select></label>`
+    : "";
   const range = (k, name) =>
     `<label class="bcx-art-range"><span>${name}</span><input type="range" data-art="${k}" min="${ART_LIMITS[k].min}" max="${ART_LIMITS[k].max}" step="${ART_LIMITS[k].step}" /></label>`;
   return `
-    <div class="bcx-art-row bcx-art-${slot}" data-art-slot="${pid}:${slot}">
+    <div class="bcx-art-row bcx-art-${isBf ? "bf" : slot}" data-art-slot="${pid}:${slot}">
       <div class="bcx-art-prev" data-art-prev></div>
       <div class="bcx-art-ctl">
         <div class="bcx-art-head"><strong>${label}</strong> <span class="hint" data-art-name></span></div>
-        ${range("zoom", "Zoom")}${range("x", "Left / right")}${range("y", "Up / down")}
+        ${rot}${range("zoom", "Zoom")}${range("x", "Left / right")}${range("y", "Up / down")}
         <button type="button" class="btn ghost small" data-art-reset>Reset</button>
       </div>
     </div>`;
@@ -159,7 +182,11 @@ function artRow(pid, slot, label) {
 function artCard(pid, slot) {
   const d = data();
   const p = d?.players?.find((x) => x.id === pid);
-  const id = slot === "legend" ? p?.deck?.legend : game().champion?.[pid] || p?.deck?.champions?.[0];
+  const id = slot.startsWith("bf")
+    ? bfIds(pid)[Number(slot.slice(2))]
+    : slot === "legend"
+      ? p?.deck?.legend
+      : game().champion?.[pid] || p?.deck?.champions?.[0];
   const card = id ? d?.cardsCache?.[id] : null;
   return { id: id || null, card, src: card?.imageLocal || card?.thumbLocal || "" };
 }
@@ -178,13 +205,36 @@ function paintArtRow(row, { force = false } = {}) {
   row.dataset.card = id || "";
   row.classList.toggle("disabled", !src);
   row.querySelector("[data-art-name]").textContent = card?.name || "— no card —";
-  const f = framingFor(id, framingMap());
-  const prev = row.querySelector("[data-art-prev]");
-  prev.setAttribute("style", src ? artStyle(src, f) : "");
+  const isBf = slot.startsWith("bf");
+  const f = isBf ? bfFramingFor(id, framingMap()) : framingFor(id, framingMap());
+  paintPreview(row, src, f, isBf);
   row.querySelectorAll("[data-art]").forEach((input) => {
     input.disabled = !src;
-    if (force || document.activeElement !== input) input.value = f[input.dataset.art];
+    if (force || document.activeElement !== input) input.value = String(f[input.dataset.art]);
   });
+}
+
+function paintPreview(row, src, f, isBf) {
+  const prev = row.querySelector("[data-art-prev]");
+  if (!isBf) {
+    prev.setAttribute("style", src ? artStyle(src, f) : "");
+    return;
+  }
+  const html = src ? bfImgHtml(src, f) : "";
+  if (prev.dataset.html === html) return;
+  prev.dataset.html = html;
+  watchBfImgs(prev);
+  prev.innerHTML = html;
+  fitAllBfImgs(prev);
+}
+
+/** Read a row's controls into a framing object. */
+function readRow(row) {
+  const f = {};
+  row.querySelectorAll("[data-art]").forEach((i) => {
+    f[i.dataset.art] = i.dataset.art === "rot" ? (i.value === "auto" ? "auto" : Number(i.value)) : Number(i.value);
+  });
+  return f;
 }
 
 const framingTimers = {};
@@ -258,6 +308,8 @@ export function update() {
     const box = root.querySelector(`[data-bcx-runes="${pid}"]`);
     const want = domainsOf(pid).join(",");
     if ((box?.dataset.domains || "") !== want) return build();
+    const art = root.querySelector(`[data-art-open="${pid}"]`);
+    if (art && (art.dataset.bfIds || "") !== bfIds(pid).join(",")) return build();
     const runes = stats(pid).runes || {};
     root.querySelectorAll(`[data-bcx-runeval^="${pid}:"]`).forEach((el) => {
       const [, d, k] = el.dataset.bcxRuneval.split(":");
@@ -303,11 +355,12 @@ function bind() {
     const row = input.closest("[data-art-slot]");
     const cardId = row?.dataset.card;
     if (!cardId) return;
-    const f = {};
-    row.querySelectorAll("[data-art]").forEach((i) => (f[i.dataset.art] = Number(i.value)));
-    framingMap()[cardId] = f;
-    const { src } = artCard(...row.dataset.artSlot.split(":"));
-    row.querySelector("[data-art-prev]").setAttribute("style", artStyle(src, f));
+    const f = readRow(row);
+    framingMap()[cardId] = f.rot === "auto" ? { ...f, rot: undefined } : f;
+    const [pid, slot] = row.dataset.artSlot.split(":");
+    const { src } = artCard(pid, slot);
+    const isBf = slot.startsWith("bf");
+    paintPreview(row, src, isBf ? bfFramingFor(cardId, framingMap()) : f, isBf);
     sendFraming(cardId, f);
   });
 
