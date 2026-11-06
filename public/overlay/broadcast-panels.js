@@ -124,6 +124,32 @@ function resultsHtml(state) {
   return `<div class="rb gslots">${slots.join("")}</div>`;
 }
 
+// ---- final turns (Turn 0 → Turn 3 after time is called) -----------------------------
+
+function liveTurns(state) {
+  const t = state.display?.broadcast?.turns;
+  const m = state.match || {};
+  if (!t || (t.player !== "p1" && t.player !== "p2")) return null;
+  if (t.game !== m.currentGame || m.winner) return null;
+  return t;
+}
+
+/** Red tray of four pips, each in the colour of the player taking that turn. */
+function turnsHtml(state) {
+  const t = liveTurns(state);
+  if (!t) return "";
+  const other = t.player === "p1" ? "p2" : "p1";
+  const owner = (n) => (n % 2 === 0 ? t.player : other);
+  const done = t.current > 3;
+  const pips = [0, 1, 2, 3]
+    .map((n) => {
+      const cls = done || n < t.current ? "done" : n === t.current ? "now" : "";
+      return `<i class="tp ${cls} tp-${owner(n)}">${n}</i>`;
+    })
+    .join("");
+  return `<div class="turns${done ? " over" : ""}"><b>${done ? "Game end" : t.current === 3 ? "Last turn" : "Turns"}</b>${pips}</div>`;
+}
+
 function scoreboardHtml(state) {
   const b = bc(state);
   // Points in the game being played (games won show in the result slots
@@ -148,7 +174,7 @@ function scoreboardHtml(state) {
   return `
     <div class="bx bx-sb"><div class="sb">
       ${plate(0)}
-      <div class="cw"><div class="ctrw">${counter}${fils("tl", "tr")}</div>${resultsHtml(state)}</div>
+      <div class="cw"><div class="ctrw">${counter}${fils("tl", "tr")}</div>${resultsHtml(state)}${turnsHtml(state)}</div>
       ${plate(1)}
     </div></div>`;
 }

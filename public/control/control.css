@@ -1091,3 +1091,13 @@ select:focus {
 .obs-radio, .obs-toggle { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); }
 .obs-radio input, .obs-toggle input { width: auto; margin: 0; }
 .obs-radio strong { white-space: nowrap; }
+
+/* Final turns row (Broadcast card) */
+.bcx-turns { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
+.bcx-turns .btn { width: auto; }
+.bcx-turns-q { color: var(--muted); font-size: 13px; }
+.bcx-turns-now { font-size: 14px; margin-right: 4px; }
+.bcx-turns.alert { border-color: #ff3b4f; background: rgba(255, 59, 79, 0.1); }
+.bcx-turns.alert .bcx-turns-q { color: #ff8a97; font-weight: 700; }
+.bcx-turns.live { border-color: #ff3b4f; background: rgba(255, 59, 79, 0.06); }
+.bcx-turns.live strong { color: #ff8a97; }

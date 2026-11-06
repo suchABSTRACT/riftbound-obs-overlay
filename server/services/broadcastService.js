@@ -61,6 +61,7 @@ export async function timerAction(op, { seconds } = {}) {
     case "reset":
       t.remaining = t.duration;
       t.startedAt = null;
+      broadcast().turns = null; // a fresh clock clears the final turns
       break;
     case "set": {
       const s = Math.round(Number(seconds));
@@ -68,6 +69,7 @@ export async function timerAction(op, { seconds } = {}) {
       t.duration = s;
       t.remaining = s;
       t.startedAt = null;
+      broadcast().turns = null;
       break;
     }
     case "add": {
@@ -81,6 +83,51 @@ export async function timerAction(op, { seconds } = {}) {
   }
   await persistAndBroadcast(["display"]);
   return { ...t, now };
+}
+
+// ---- final turns (after time is called) -------------------------------------------
+//
+// When the clock runs out, the player whose turn it is plays Turn 0, then
+// players alternate through Turn 3 and the game ends. Stored as
+//   broadcast.turns = { player: who plays Turn 0, current: 0–3 (4 = done), game }
+// and only shown while `game` is still the game being played.
+
+export const LAST_TURN = 3;
+
+export function liveTurns(gameData = activeGameData()) {
+  const t = gameData.display?.broadcast?.turns;
+  const match = gameData.match;
+  if (!t || !PLAYER_IDS.includes(t.player)) return null;
+  if (t.game !== match.currentGame || match.winner) return null;
+  return t;
+}
+
+/** op: start (player = who plays Turn 0) | next | prev | clear */
+export async function turnsAction(op, player) {
+  const bc = broadcast();
+  const match = activeGameData().match;
+  const cur = liveTurns();
+  switch (op) {
+    case "start":
+      if (!PLAYER_IDS.includes(player)) throw bad("player must be p1 or p2");
+      bc.turns = { player, current: 0, game: match.currentGame };
+      break;
+    case "next":
+      if (!cur) throw bad("final turns haven't started");
+      cur.current = Math.min(LAST_TURN + 1, cur.current + 1);
+      break;
+    case "prev":
+      if (!cur) throw bad("final turns haven't started");
+      cur.current = Math.max(0, cur.current - 1);
+      break;
+    case "clear":
+      bc.turns = null;
+      break;
+    default:
+      throw bad("op must be start|next|prev|clear");
+  }
+  await persistAndBroadcast(["display"]);
+  return liveTurns();
 }
 
 // ---- per-game board state ----------------------------------------------------------

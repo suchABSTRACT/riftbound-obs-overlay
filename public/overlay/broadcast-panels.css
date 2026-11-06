@@ -139,3 +139,12 @@
 .slot-panel .bx .clk:not(.running){color:var(--muted)}
 .slot-panel .bx .clk.low{color:#ffd27a}
 .slot-panel .bx .clk.over{color:#ff3b4f;text-shadow:0 0 calc(var(--p)*8) rgba(255,59,79,.45)}
+
+/* ---- final turns tray (Turn 0 → 3 after time) ---- */
+.bx .turns{display:flex;align-items:center;gap:calc(var(--p)*6);margin-top:calc(var(--p)*6);padding:calc(var(--p)*4) calc(var(--p)*10);background:linear-gradient(180deg,#2a0a12,#12040a);border:max(1px,calc(var(--p)*1)) solid #ff3b4f;border-radius:calc(var(--p)*10);box-shadow:0 0 calc(var(--p)*10) rgba(255,59,79,.35)}
+.bx .turns b{font-size:calc(var(--p)*13);font-weight:800;letter-spacing:.14em;color:#ff8a97;text-transform:uppercase;margin-right:calc(var(--p)*4);white-space:nowrap}
+.bx .tp{--c:#2c5bd6;width:calc(var(--p)*24);height:calc(var(--p)*24);border-radius:50%;display:grid;place-items:center;font-size:calc(var(--p)*15);font-weight:800;font-style:normal;color:rgba(255,255,255,.55);border:max(1px,calc(var(--p)*1.5)) solid var(--c);background:#05070f;transition:all .35s}
+.bx .tp.tp-p2{--c:#c3283b}
+.bx .tp.done{opacity:.35}
+.bx .tp.now{color:#fff;background:var(--c);box-shadow:0 0 calc(var(--p)*10) var(--c);transform:scale(1.15)}
+.bx .turns.over{border-color:#8a2030;box-shadow:none}

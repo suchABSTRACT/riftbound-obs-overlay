@@ -53,6 +53,8 @@ function defaultBroadcast() {
     // Decklist screen: whose deck is shown.
     decklist: { player: "p1" },
     // Decklist Spotlight art per Legend: legendId -> { skin, url }.
+    // Final turns after time is called (see broadcastService.turnsAction).
+    turns: null,
     spotArt: {},
   };
 }

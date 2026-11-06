@@ -304,6 +304,7 @@ function build() {
         <button type="button" class="btn ghost small" data-bcx-act="timer-set">Set</button>
       </div>
     </div>
+    <div class="bcx-turns" data-bcx="turns"></div>
     <div class="bcx-players">${playerCol("p1")}${playerCol("p2")}</div>
     <details class="bcx-show">
       <summary>Show on overlay</summary>
@@ -317,7 +318,8 @@ function build() {
       </div>
     </details>
     <p class="hint">Stream Deck: <code>/api/hot/stat/p1/hand/inc</code> · <code>/api/hot/stat/p2/level/inc</code> · <code>/api/hot/rune/p1/fury/total/inc</code> · <code>/api/hot/runes/p1/ready</code> ·
-      <code>/api/hot/first/p1</code> · <code>/api/hot/timer/toggle</code></p>`;
+      <code>/api/hot/first/p1</code> · <code>/api/hot/timer/toggle</code> ·
+      <code>/api/hot/turns/start/p1</code> · <code>/api/hot/turns/next</code> · <code>/api/hot/turns/prev</code> · <code>/api/hot/turns/clear</code></p>`;
   update();
 }
 
@@ -359,11 +361,52 @@ export function update() {
   tick();
 }
 
+// ---- final turns (Turn 0 → 3 after time is called) ------------------------------------
+
+function liveTurns() {
+  const t = bc().turns;
+  const m = data()?.match || {};
+  if (!t || (t.player !== "p1" && t.player !== "p2")) return null;
+  if (t.game !== m.currentGame || m.winner) return null;
+  return t;
+}
+
+function paintTurns(timeUp) {
+  const box = root?.querySelector('[data-bcx="turns"]');
+  if (!box) return;
+  const t = liveTurns();
+  let html;
+  if (!t) {
+    const start = (pid) =>
+      `<button type="button" class="btn ${timeUp ? "" : "ghost "}small" data-bcx-act="turns-start" data-pid="${pid}">${esc(name(pid))}</button>`;
+    html = `<span class="inline-lbl">Final turns</span>
+      <span class="bcx-turns-q">${timeUp ? "Time! Who plays Turn 0?" : "Turn 0 for:"}</span>${start("p1")}${start("p2")}`;
+  } else {
+    const other = t.player === "p1" ? "p2" : "p1";
+    const who = (n) => name(n % 2 === 0 ? t.player : other);
+    const done = t.current > 3;
+    const now = done
+      ? `<strong>Game end</strong> — record the result`
+      : `<strong>${t.current === 3 ? "Last turn" : `Turn ${t.current}`}</strong> · ${esc(who(t.current))}`;
+    html = `<span class="inline-lbl">Final turns</span><span class="bcx-turns-now">${now}</span>
+      <button type="button" class="btn ghost small" data-bcx-act="turns-prev" ${t.current === 0 ? "disabled" : ""}>◀ Back</button>
+      ${done ? "" : `<button type="button" class="btn small" data-bcx-act="turns-next">${t.current === 3 ? "End game" : `Next: Turn ${t.current + 1} ▶`}</button>`}
+      <button type="button" class="btn ghost small" data-bcx-act="turns-clear">Clear</button>`;
+  }
+  box.classList.toggle("alert", Boolean(timeUp && !t));
+  box.classList.toggle("live", Boolean(t));
+  if (box.dataset.html !== html) {
+    box.dataset.html = html;
+    box.innerHTML = html;
+  }
+}
+
 function tick() {
   const t = bc().timer;
   const el = root?.querySelector('[data-bcx="clock"]');
   if (!el || !t) return;
   const left = t.startedAt ? t.remaining - (Date.now() - t.startedAt) / 1000 : t.remaining;
+  paintTurns(left <= 0);
   el.textContent = fmt(left);
   el.classList.toggle("over", left <= 0);
   const btn = root.querySelector('[data-bcx-act="timer-toggle"]');
@@ -438,6 +481,18 @@ function bind() {
     const pid = act.dataset.pid;
     const d = data();
     switch (act.dataset.bcxAct) {
+      case "turns-start":
+      case "turns-next":
+      case "turns-prev":
+      case "turns-clear": {
+        const op = act.dataset.bcxAct.slice(6);
+        const r = await post("/api/broadcast/turns", op === "start" ? { op, player: pid } : { op });
+        if (r && d?.display?.broadcast) {
+          d.display.broadcast.turns = op === "clear" ? null : r.result;
+          tick();
+        }
+        break;
+      }
       case "first": {
         const r = await post("/api/broadcast/first", { player: pid });
         if (r) {

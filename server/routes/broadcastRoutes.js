@@ -8,6 +8,7 @@ import {
   setRecord,
   setStat,
   timerAction,
+  turnsAction,
   updateBroadcast,
 } from "../services/broadcastService.js";
 import { setSpotlightArt } from "../legendArt.js";
@@ -28,6 +29,8 @@ broadcastRoutes.post("/broadcast", wrap((req) => updateBroadcast(req.body ?? {})
 // Decklist Spotlight art: { legendId, skin?, url? }
 broadcastRoutes.post("/broadcast/spotlight", wrap((req) => setSpotlightArt(req.body ?? {}, persistAndBroadcast)));
 broadcastRoutes.post("/broadcast/timer", wrap((req) => timerAction(req.body?.op, req.body ?? {})));
+// Final turns after time: { op: "start", player } | { op: "next" | "prev" | "clear" }
+broadcastRoutes.post("/broadcast/turns", wrap((req) => turnsAction(req.body?.op, req.body?.player)));
 broadcastRoutes.post("/broadcast/first", wrap((req) => setFirstPlayer(req.body?.player ?? null)));
 broadcastRoutes.post("/broadcast/stat", wrap((req) => setStat(req.body ?? {})));
 broadcastRoutes.post("/broadcast/rune", wrap((req) => setRune(req.body ?? {})));
@@ -60,3 +63,6 @@ broadcastRoutes.get(
 broadcastRoutes.get("/hot/runes/:player/:mode", wrap((req) => setAllRunes(req.params.player, req.params.mode)));
 broadcastRoutes.get("/hot/first/:player", wrap((req) => setFirstPlayer(req.params.player)));
 broadcastRoutes.get("/hot/timer/:op", wrap((req) => timerAction(req.params.op)));
+//   /api/hot/turns/start/p1   /api/hot/turns/next   /api/hot/turns/prev   /api/hot/turns/clear
+broadcastRoutes.get("/hot/turns/start/:player", wrap((req) => turnsAction("start", req.params.player)));
+broadcastRoutes.get("/hot/turns/:op", wrap((req) => turnsAction(req.params.op)));
