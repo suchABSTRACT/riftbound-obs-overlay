@@ -343,7 +343,44 @@ async function toggleMatchup() {
   const showing = data.display?.mode === "matchup";
   await api(showing ? "/api/display/clear" : "/api/display/matchup", { method: "POST" });
   if (data.display) data.display.mode = showing ? "persistent" : "matchup";
+  updateScreenButtons();
   toast(showing ? "Matchup hidden" : "Matchup shown");
+}
+
+function decklistPlayer() {
+  return data.display?.broadcast?.decklist?.player || "p1";
+}
+
+/** Show a player's decklist full-screen; pressing it again hides it. */
+async function toggleDecklist(pid) {
+  const showing = data.display?.mode === "decklist" && decklistPlayer() === pid;
+  if (showing) {
+    await api("/api/display/clear", { method: "POST" });
+    if (data.display) data.display.mode = "persistent";
+  } else {
+    await api("/api/display/decklist", { method: "POST", body: { player: pid } });
+    if (data.display) {
+      data.display.mode = "decklist";
+      if (data.display.broadcast) data.display.broadcast.decklist = { player: pid };
+    }
+  }
+  updateScreenButtons();
+  toast(showing ? "Decklist hidden" : `${playerName(pid)} decklist shown`);
+}
+
+/** Highlight the full-screen button that is live (and relabel it "Hide"). */
+function updateScreenButtons() {
+  const mode = data?.display?.mode;
+  const mu = document.getElementById("show-matchup");
+  if (mu) {
+    mu.classList.toggle("live", mode === "matchup");
+    mu.textContent = mode === "matchup" ? "Hide matchup" : "Show matchup";
+  }
+  document.querySelectorAll("[data-decklist]").forEach((b) => {
+    const on = mode === "decklist" && decklistPlayer() === b.dataset.decklist;
+    b.classList.toggle("live", on);
+    b.textContent = `${on ? "Hide decklist" : "Decklist"} · ${playerName(b.dataset.decklist)}`;
+  });
 }
 
 async function hidePlayerCard(pid) {
@@ -374,6 +411,7 @@ function updateHideCardButtons() {
     const btn = document.querySelector(`[data-hide-card="${id}"]`);
     if (btn) btn.disabled = !data.display?.cards?.[id];
   }
+  updateScreenButtons();
 }
 
 function currentGameScore() {
@@ -604,6 +642,9 @@ function renderDisplay() {
 
 document.getElementById("hide-card").addEventListener("click", hideDisplay);
 document.getElementById("show-matchup").addEventListener("click", toggleMatchup);
+document.querySelectorAll("[data-decklist]").forEach((b) =>
+  b.addEventListener("click", () => toggleDecklist(b.dataset.decklist))
+);
 
 // ---- Stream Deck (native HID) ---------------------------------------------
 

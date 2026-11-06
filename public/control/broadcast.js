@@ -35,6 +35,7 @@ const SHOW_LABELS = {
   record: "Records",
   timer: "Clock",
   results: "Game results",
+  sideboard: "Decklist sideboard",
 };
 
 let root = null;

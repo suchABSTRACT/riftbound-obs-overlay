@@ -8,6 +8,7 @@ import {
   resolveDisplayCardRequest,
   setAnimation,
   setDisplayCard,
+  showDecklist,
   showMatchup,
 } from "../services/displayService.js";
 
@@ -69,6 +70,22 @@ displayRoutes.get("/hot/clear/:player", async (req, res) => {
 displayRoutes.get("/hot/matchup", async (_req, res) => {
   try {
     res.json({ ok: true, display: await showMatchup() });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+displayRoutes.get("/hot/decklist/:player", async (req, res) => {
+  try {
+    res.json({ ok: true, display: await showDecklist(req.params.player) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+displayRoutes.post("/display/decklist", async (req, res) => {
+  try {
+    res.json({ ok: true, display: await showDecklist(req.body?.player || "p1") });
   } catch (err) {
     res.status(err.status || 500).json({ error: err.message });
   }

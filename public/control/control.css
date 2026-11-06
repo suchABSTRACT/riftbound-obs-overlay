@@ -208,6 +208,14 @@ select:focus {
 .btn.danger {
   background: var(--danger);
 }
+/* A full-screen screen (matchup / decklist) that is on air right now */
+.btn.live {
+  background: #b8892b;
+  box-shadow: 0 0 0 2px #e2c27a inset;
+}
+.btn.live:hover {
+  background: #c99a3a;
+}
 .btn.small {
   padding: 5px 10px;
   font-size: 12px;

@@ -38,7 +38,7 @@ const FORMATS = {
 /** Card reveal animations for on-demand display (overlay CSS). */
 const CARD_ANIMATIONS = ["none", "fade", "slide", "pop", "flip", "glow", "impact"];
 
-const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "runes", "record", "timer", "results"];
+const BROADCAST_SHOW_KEYS = ["first", "level", "hand", "runes", "record", "timer", "results", "sideboard"];
 
 /** Broadcast overlay settings that survive a match reset (round name, clock, what to show). */
 function defaultBroadcast() {
@@ -50,6 +50,8 @@ function defaultBroadcast() {
     show: Object.fromEntries(BROADCAST_SHOW_KEYS.map((k) => [k, true])),
     // Per-card art framing for the player panels: cardId -> { x, y, zoom }.
     framing: {},
+    // Decklist screen: whose deck is shown.
+    decklist: { player: "p1" },
   };
 }
 
@@ -326,6 +328,8 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   if (!bc.timer || typeof bc.timer !== "object") bc.timer = defaultBroadcast().timer;
   bc.show ||= {};
   if (!bc.framing || typeof bc.framing !== "object") bc.framing = {};
+  if (!bc.decklist || typeof bc.decklist !== "object") bc.decklist = { player: "p1" };
+  if (bc.decklist.player !== "p1" && bc.decklist.player !== "p2") bc.decklist.player = "p1";
   for (const k of BROADCAST_SHOW_KEYS) if (typeof bc.show[k] !== "boolean") bc.show[k] = true;
 
   for (const p of gameData.players || []) {

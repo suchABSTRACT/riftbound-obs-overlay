@@ -7,6 +7,7 @@ import {
   slotDomId,
 } from "/shared/layout.js";
 import { mxBuild, mxIdentity, mxUpdate } from "./matchup-riftbound.js";
+import { dlBuild, dlIdentity, dlUpdate } from "./decklist-riftbound.js";
 import { PANEL_DEFS, updateClock } from "./broadcast-panels.js";
 
 const stage = document.getElementById("stage");
@@ -135,13 +136,21 @@ function playCardAnimation(el, type, side) {
   if (type === "slide") el.classList.add(side === "p1" ? "anim-from-left" : "anim-from-right");
 }
 
+// The full-screen layer hosts either the matchup screen or a decklist.
+function isDecklist(state) {
+  return state.display?.mode === "decklist";
+}
+
 function hashMatchup(state) {
-  return `mx|${mxIdentity(state)}`;
+  return isDecklist(state) ? dlIdentity(state) : `mx|${mxIdentity(state)}`;
 }
 
 function buildMatchupDom(state) {
-  matchupEl.classList.add("mx");
-  mxBuild(matchupEl, state);
+  const dl = isDecklist(state);
+  matchupEl.classList.toggle("mx", !dl);
+  matchupEl.classList.toggle("dl", dl);
+  if (dl) dlBuild(matchupEl, state);
+  else mxBuild(matchupEl, state);
 }
 
 function preloadMatchupImages(root) {
@@ -360,7 +369,8 @@ function render(state, info = { type: "state", sections: [] }) {
 
   if (!displayChanged && layoutChanged) return;
 
-  const mode = state.display.mode === "matchup" ? "matchup" : "persistent";
+  // "matchup" here means the full-screen layer: matchup or decklist.
+  const mode = state.display.mode === "matchup" || state.display.mode === "decklist" ? "matchup" : "persistent";
   const prev = lastDisplayMode;
 
   if (mode === "matchup") {
@@ -369,8 +379,9 @@ function render(state, info = { type: "state", sections: [] }) {
     } else if (hashMatchup(state) !== matchupHash) {
       enterMatchup(state);
     } else {
-      // Same players/format: update score, strip and champions in place.
-      mxUpdate(matchupEl, state);
+      // Same screen: update in place (score, strip, deck…) without replaying.
+      if (isDecklist(state)) dlUpdate(matchupEl, state);
+      else mxUpdate(matchupEl, state);
     }
     lastDisplayMode = mode;
     updateClock(state);

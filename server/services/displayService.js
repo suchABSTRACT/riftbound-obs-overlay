@@ -73,6 +73,21 @@ export async function showMatchup() {
   return gameData.display;
 }
 
+/** Full-screen decklist for one player (sideboard follows show.sideboard). */
+export async function showDecklist(player = "p1") {
+  if (!validatePlayerId(player)) throw Object.assign(new Error("invalid player"), { status: 400 });
+  const gameData = activeGameData();
+  const bc = gameData.display.broadcast;
+  if (bc) bc.decklist = { ...(bc.decklist || {}), player };
+  gameData.display.mode = "decklist";
+  if (gameData.display.cards) {
+    gameData.display.cards.p1 = null;
+    gameData.display.cards.p2 = null;
+  }
+  await persistAndBroadcast(["display"]);
+  return gameData.display;
+}
+
 export async function clearDisplay(player = null) {
   const gameData = activeGameData();
   gameData.display.mode = "persistent";

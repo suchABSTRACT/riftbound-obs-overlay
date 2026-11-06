@@ -87,6 +87,47 @@ export function runeDomains(deck = {}, cardsCache = {}) {
   return out;
 }
 
+/** Rune counts per domain, e.g. [{ domain: "fury", count: 6 }]. */
+export function runeCounts(deck = {}, cardsCache = {}) {
+  const counts = new Map();
+  for (const e of deck.runes || []) {
+    const c = cardsCache[e.id] || {};
+    const words = `${c.name || ""} ${c.faction || ""} ${e.id || ""}`.toLowerCase();
+    const d = DOMAINS.find((x) => words.includes(x)) || "other";
+    counts.set(d, (counts.get(d) || 0) + (Number(e.quantity) || 1));
+  }
+  return [...counts].map(([domain, count]) => ({ domain, count }));
+}
+
+/**
+ * Deck as shown on the decklist screen: main deck (champions first, copies
+ * merged) and sideboard as [{ ...card, q }], plus rune counts.
+ */
+export function overlayDecklist(deck = {}, cardsCache = {}) {
+  const list = (entries) => {
+    const byId = new Map();
+    for (const e of entries) {
+      const id = typeof e === "string" ? e : e?.id;
+      if (!id) continue;
+      const q = typeof e === "string" ? 1 : Number(e.quantity) || 1;
+      byId.set(id, (byId.get(id) || 0) + q);
+    }
+    return [...byId].map(([id, q]) => ({ ...(cardsCache[id] || { id, name: id }), id, q }));
+  };
+  const champs = list(deck.champions || []);
+  const champIds = new Set(champs.map((c) => c.id));
+  const main = list([...(deck.champions || []), ...(deck.maindeck || [])]);
+  main.sort((a, b) => Number(champIds.has(b.id)) - Number(champIds.has(a.id)));
+  const side = list(deck.sideboard || []);
+  return {
+    main,
+    mainCount: main.reduce((n, c) => n + c.q, 0),
+    side,
+    sideCount: side.reduce((n, c) => n + c.q, 0),
+    runes: runeCounts(deck, cardsCache),
+  };
+}
+
 export function buildOverlayPlayers(players = [], cardsCache = {}) {
   const card = (id) => (id ? cardsCache[id] || null : null);
   return players.map((p) => ({
@@ -97,6 +138,7 @@ export function buildOverlayPlayers(players = [], cardsCache = {}) {
     legend: card(p.deck.legend),
     champion: card((p.deck.champions || [])[0]),
     battlefields: (p.deck.battlefields || []).map((e) => card(e.id)).filter(Boolean),
+    decklist: overlayDecklist(p.deck, cardsCache),
   }));
 }
 

@@ -1,0 +1,351 @@
+/* =============================================================================
+   Riftbound decklist screen — "Spotlight" (Filigree). Transparent background:
+   whatever is behind the Browser Source in OBS shows through. Shapes, grain
+   and flourishes come from broadcast-panels.css (.bx .sh / .fil / .tex-grain);
+   --p is one design pixel at 1920×1080.
+   ============================================================================= */
+
+.matchup.dl {
+  display: block;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+}
+.dl-root {
+  --p: min(calc(100vw / 1920), calc(100vh / 1080));
+  --u: var(--p);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: "Barlow Condensed", "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  color: #f4f6fb;
+}
+.dl-root * {
+  box-sizing: border-box;
+}
+
+/* ---- spotlight (left) ---------------------------------------------------------- */
+
+.dl-art {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(var(--p) * 860);
+  height: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent);
+  mask-image: linear-gradient(90deg, #000 45%, transparent);
+}
+/* Only the art half of the card: zoomed in from the top so the printed
+   name / rules box stays off-screen. */
+.dl-art img {
+  position: absolute;
+  left: 50%;
+  top: -6%;
+  width: 165%;
+  height: auto;
+  transform: translateX(-46%);
+}
+.dl-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 25%, rgba(5, 8, 24, 0.7) 55%, rgba(5, 8, 24, 0.95) 85%);
+}
+.dl-ch {
+  --rot: 6deg;
+  position: absolute;
+  left: calc(var(--p) * 450);
+  top: calc(var(--p) * 60);
+  width: calc(var(--p) * 240);
+  aspect-ratio: 744 / 1039;
+  padding: max(1px, calc(var(--p) * 1.5));
+  border-radius: calc(var(--p) * 10);
+  background: var(--metal);
+  transform: rotate(var(--rot));
+  box-shadow: 0 calc(var(--p) * 18) calc(var(--p) * 40) rgba(0, 0, 0, 0.65);
+  z-index: 2;
+}
+.dl-ch img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--p) * 9);
+  display: block;
+}
+.dl-id {
+  position: absolute;
+  left: calc(var(--p) * 56);
+  bottom: calc(var(--p) * 44);
+  width: calc(var(--p) * 700);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--p) * 6);
+  z-index: 3;
+  text-shadow: 0 calc(var(--p) * 3) calc(var(--p) * 14) rgba(0, 0, 0, 0.9);
+}
+.dl-k {
+  font-size: calc(var(--p) * 22);
+  font-weight: 700;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.dl-n {
+  font-size: calc(var(--p) * 112);
+  font-weight: 800;
+  line-height: 0.95;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.dl-s {
+  font-size: calc(var(--p) * 28);
+  font-weight: 600;
+  color: #dfe5f7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dl-r {
+  font-size: calc(var(--p) * 22);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+}
+.dl-lbl {
+  font-size: calc(var(--p) * 17);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.dl-runes {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--p) * 18);
+  margin-top: calc(var(--p) * 10);
+  padding: calc(var(--p) * 12) calc(var(--p) * 10) 0 0;
+  border-top: max(1px, calc(var(--p) * 1)) solid var(--gold-2);
+  width: fit-content;
+}
+.dl-rn {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--p) * 8);
+  font-size: calc(var(--p) * 30);
+  font-weight: 700;
+}
+.dl-rn i {
+  width: calc(var(--p) * 48);
+  height: calc(var(--p) * 48);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 40% 30%, color-mix(in srgb, var(--c) 60%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 40%, #000));
+  box-shadow: 0 0 0 calc(var(--p) * 2) var(--gold), 0 0 0 calc(var(--p) * 6) rgba(5, 8, 24, 0.85);
+}
+.dl-rn i b {
+  width: calc(var(--p) * 16);
+  height: calc(var(--p) * 16);
+  transform: rotate(45deg);
+  border: calc(var(--p) * 2.5) solid rgba(255, 255, 255, 0.9);
+}
+.dl-bfl {
+  margin-top: calc(var(--p) * 18);
+}
+.dl-bfs {
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--p) * 200));
+  gap: calc(var(--p) * 12);
+}
+.dl-bf {
+  position: relative;
+  aspect-ratio: 1039 / 744;
+  padding: max(1px, calc(var(--p) * 1.5));
+  border-radius: calc(var(--p) * 6);
+  background: var(--metal);
+  box-shadow: 0 calc(var(--p) * 8) calc(var(--p) * 20) rgba(0, 0, 0, 0.6);
+}
+.dl-bf-art {
+  position: absolute;
+  inset: max(1px, calc(var(--p) * 1.5));
+  overflow: hidden;
+  border-radius: calc(var(--p) * 5);
+  background: #060a1e;
+  container-type: size;
+}
+.dl-bf span {
+  position: absolute;
+  left: max(1px, calc(var(--p) * 1.5));
+  right: max(1px, calc(var(--p) * 1.5));
+  bottom: max(1px, calc(var(--p) * 1.5));
+  padding: calc(var(--p) * 16) calc(var(--p) * 6) calc(var(--p) * 5);
+  font-size: calc(var(--p) * 15);
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+  border-radius: 0 0 calc(var(--p) * 5) calc(var(--p) * 5);
+  background: linear-gradient(180deg, transparent, rgba(5, 8, 24, 0.92));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- tabbed panels (right) ------------------------------------------------------ */
+
+.dl-main-w,
+.dl-side-w {
+  position: absolute;
+  left: calc(var(--p) * 800);
+  width: calc(var(--p) * 1084);
+}
+.dl-main-w {
+  top: calc(var(--p) * 36);
+  height: calc(var(--p) * 700);
+}
+.dl-main-w:has(.tall) {
+  height: calc(var(--p) * 1008);
+}
+.dl-side-w {
+  top: calc(var(--p) * 762);
+  height: calc(var(--p) * 282);
+}
+.dl-tp {
+  position: absolute;
+  inset: 0;
+}
+.bx .dl-tp-sh {
+  position: absolute;
+  inset: calc(var(--p) * 22) 0 0 0;
+  --fill: linear-gradient(180deg, rgba(12, 19, 56, 0.93), rgba(6, 10, 30, 0.95));
+  --s: polygon(calc(var(--p) * 16) 0, 100% 0, 100% calc(100% - calc(var(--p) * 16)), calc(100% - calc(var(--p) * 16)) 100%, 0 100%, 0 calc(var(--p) * 16));
+}
+.dl-tab {
+  position: absolute;
+  top: 0;
+  left: calc(var(--p) * 30);
+  height: calc(var(--p) * 44);
+  z-index: 3;
+}
+.bx .dl-tab-sh {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 calc(var(--p) * 30);
+  --fill: linear-gradient(180deg, #1f47bd, #0d1f63);
+  --s: polygon(calc(var(--p) * 12) 0, calc(100% - calc(var(--p) * 12)) 0, 100% 50%, calc(100% - calc(var(--p) * 12)) 100%, calc(var(--p) * 12) 100%, 0 50%);
+}
+.dl-tab-sh span {
+  position: relative;
+  z-index: 1;
+  font-size: calc(var(--p) * 23);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.dl-tab-sh em {
+  font-style: normal;
+  color: var(--gold);
+  margin-left: calc(var(--p) * 12);
+  letter-spacing: 0;
+}
+.bx .dl-side .dl-tab-sh {
+  --fill: linear-gradient(180deg, #6b5418, #2a2008);
+}
+.dl-tp-in {
+  position: absolute;
+  top: calc(var(--p) * 66);
+  left: calc(var(--p) * 28);
+  right: calc(var(--p) * 28);
+  bottom: calc(var(--p) * 20);
+  z-index: 2;
+}
+.bx .dl-tp .fil.tl { top: calc(var(--p) * 13); left: calc(var(--p) * -9); }
+.bx .dl-tp .fil.br { bottom: calc(var(--p) * -9); right: calc(var(--p) * -9); }
+
+/* cards with copy bubbles */
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), calc(var(--p) * var(--card)));
+  gap: calc(var(--p) * 18);
+}
+.dl-side .dl-grid {
+  gap: calc(var(--p) * 12);
+}
+.dl-qc {
+  position: relative;
+  padding-bottom: calc(var(--p) * 16);
+}
+.dl-cd {
+  aspect-ratio: 744 / 1039;
+  padding: max(1px, calc(var(--p) * 1.5));
+  border-radius: calc(var(--p) * 8);
+  background: var(--metal);
+  box-shadow: 0 calc(var(--p) * 8) calc(var(--p) * 18) rgba(0, 0, 0, 0.55);
+}
+.dl-cd img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: calc(var(--p) * 7);
+  display: block;
+}
+.dl-cd span {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: calc(var(--p) * 6);
+  border-radius: calc(var(--p) * 7);
+  background: #0b1230;
+  font-size: calc(var(--p) * 14);
+  text-align: center;
+}
+.dl-qb {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: calc(var(--p) * 34);
+  height: calc(var(--p) * 34);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: calc(var(--p) * 21);
+  font-weight: 800;
+  color: #fff;
+  background: radial-gradient(circle at 40% 30%, #24317a, #070b20 70%);
+  box-shadow: 0 0 0 calc(var(--p) * 1.5) var(--gold), 0 0 0 calc(var(--p) * 4) rgba(5, 8, 24, 0.9),
+    0 calc(var(--p) * 3) calc(var(--p) * 8) rgba(0, 0, 0, 0.6);
+}
+.dl-qc.s .dl-qb {
+  width: calc(var(--p) * 28);
+  height: calc(var(--p) * 28);
+  font-size: calc(var(--p) * 17);
+}
+.dl-empty {
+  margin: 0;
+  font-size: calc(var(--p) * 22);
+  color: #aab3d1;
+}
+
+/* ---- entrance (shares the matchup screen's timing) ------------------------------- */
+
+.matchup.dl.matchup-entering .mp-item {
+  animation-duration: var(--mp-duration, 0.7s);
+  animation-delay: var(--mp-delay, 0ms);
+  animation-timing-function: cubic-bezier(0.2, 0.9, 0.25, 1);
+  animation-fill-mode: both;
+}
+.matchup.dl.matchup-entering .mx-a-fade {
+  animation-name: mx-fade;
+}
+.matchup.dl.matchup-entering .mx-a-rise {
+  animation-name: mx-rise;
+}
+.matchup.dl.matchup-entering .dl-a-card {
+  animation-name: mx-card;
+}
