@@ -68,7 +68,7 @@
 .bx .sc{display:flex;align-items:center;gap:calc(var(--p)*10);font-size:calc(var(--p)*48);font-weight:800;line-height:.95}
 .bx .sc i{font-style:normal;color:var(--gold);font-size:calc(var(--p)*34)}
 .bx .stg{font-size:calc(var(--p)*14);font-weight:600;color:var(--muted)}
-.bx .clk{font-size:calc(var(--p)*21);font-weight:700;padding:0 calc(var(--p)*12);margin-top:calc(var(--p)*2);background:#141c3d;border-top:calc(var(--p)*1.5) solid var(--gold-2)}
+.bx .clk{font-size:calc(var(--p)*21);font-weight:700;padding:0 calc(var(--p)*12);margin-top:calc(var(--p)*2);background:transparent;border-top:calc(var(--p)*1.5) solid var(--gold-2);font-variant-numeric:tabular-nums}
 .bx .tex-grain>.sh-c{background:url(assets/grain.png) 0 0/calc(var(--p)*180) calc(var(--p)*180),radial-gradient(ellipse at 50% 0,rgba(255,255,255,.14),transparent 70%),var(--fill,var(--navy))}
 .bx .rn{position:absolute;top:calc(var(--p)*140);display:flex;align-items:center;gap:calc(var(--p)*10)}
 .bx .rn-l{left:calc(var(--p)*24)}
@@ -138,4 +138,4 @@
 .slot-panel .bx .clk.running{color:#fff}
 .slot-panel .bx .clk:not(.running){color:var(--muted)}
 .slot-panel .bx .clk.low{color:#ffd27a}
-.slot-panel .bx .clk.over{color:#ff6b7d}
+.slot-panel .bx .clk.over{color:#ff3b4f;text-shadow:0 0 calc(var(--p)*8) rgba(255,59,79,.45)}

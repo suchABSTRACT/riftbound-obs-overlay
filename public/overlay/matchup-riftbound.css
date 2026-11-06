@@ -97,7 +97,7 @@
 .mx-sb .bx .clk.running { color: #fff; }
 .mx-sb .bx .clk:not(.running) { color: var(--muted); }
 .mx-sb .bx .clk.low { color: #ffd27a; }
-.mx-sb .bx .clk.over { color: #ff6b7d; }
+.mx-sb .bx .clk.over { color: #ff3b4f; text-shadow: 0 0 calc(var(--p) * 8) rgba(255, 59, 79, 0.45); }
 
 /* ---- player info plate --------------------------------------------------------------- */
 
@@ -213,8 +213,8 @@
   bottom: 0;
   height: calc(var(--p) * 292);
   aspect-ratio: 744 / 1039;
-  /* hover timing (each card on its own clock so they never move together) */
-  --fdur: 4.2s;
+  /* hover timing: same speed for every card, offset by --fdel */
+  --fdur: 4.4s;
   --fdel: 1.9s;
 }
 /* The card itself; floats inside .mx-card so the hover never fights the
@@ -241,17 +241,11 @@
   background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
   animation: mx-hover-shadow var(--fdur) ease-in-out var(--fdel) infinite;
 }
+/* One speed for all four cards. Both Legends move together, both Champions
+   move together, a quarter-beat behind — fixed offsets, so they never drift
+   into sync or into chaos. */
 .mx-card-champion {
-  --fdur: 4.9s;
-  --fdel: 2.6s;
-}
-.mx-hand-r .mx-card-legend {
-  --fdur: 4.5s;
-  --fdel: 2.25s;
-}
-.mx-hand-r .mx-card-champion {
-  --fdur: 5.2s;
-  --fdel: 3.1s;
+  --fdel: 3s;
 }
 @keyframes mx-hover {
   0%, 100% { translate: 0 0; rotate: 0deg; }
