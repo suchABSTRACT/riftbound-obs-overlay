@@ -229,7 +229,7 @@ function createWindow(port) {
     }
   });
 
-  mainWindow.loadURL(`http://127.0.0.1:${port}/home`).catch((err) => {
+  mainWindow.loadURL(`http://127.0.0.1:${port}/control`).catch((err) => {
     showStartupError("Home screen failed to load", err?.message || String(err));
   });
 

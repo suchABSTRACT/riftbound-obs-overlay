@@ -53,12 +53,13 @@ export async function startServer(options = {}) {
 
   app.use("/api", router);
   app.use("/cards", express.static(join(DATA_DIR, "cards"), { maxAge: "1h" }));
-  app.use("/home", express.static(`${PUBLIC_DIR}/home`));
+  // Riftbound-only: no game picker, straight to the control panel.
+  app.get(["/home", "/home/*"], (_req, res) => res.redirect("/control"));
   app.use("/control", express.static(`${PUBLIC_DIR}/control`));
   app.use("/overlay", express.static(`${PUBLIC_DIR}/overlay`));
   app.use("/shared", express.static(`${PUBLIC_DIR}/shared`));
   app.use("/preview", express.static(`${PUBLIC_DIR}/preview`));
-  app.get("/", (_req, res) => res.redirect("/home"));
+  app.get("/", (_req, res) => res.redirect("/control"));
 
   const server = createServer(app);
   initHub(server);
@@ -80,7 +81,6 @@ export async function startServer(options = {}) {
 
   console.log("Riftbound OBS Overlay");
   console.log(`  Overlay (Browser Source) : http://localhost:${port}/overlay`);
-  console.log(`  Home / game selection    : http://localhost:${port}/home`);
   console.log(`  Control panel            : http://localhost:${port}/control`);
   if (IS_RELEASE) console.log(`  Data folder              : ${DATA_DIR}`);
   /* Stream Deck HID runs in a separate worker — auto-starts shortly after boot */
@@ -90,7 +90,7 @@ export async function startServer(options = {}) {
   }, 3000);
 
   if (openBrowser) {
-    exec(`start http://localhost:${port}/home`);
+    exec(`start http://localhost:${port}/control`);
   }
 
   const close = async () => {

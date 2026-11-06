@@ -421,9 +421,10 @@ mkdirSync(DATA_DIR, { recursive: true });
 const adapter = new JSONFile(DB_FILE);
 export const db = new Low(adapter, defaultData());
 
+// This build is Riftbound-only: the game picker is gone and the session is
+// always Riftbound (Pokémon code stays in the tree but is unreachable).
 export function getActiveGameId() {
-  const id = db.data?.session?.activeGame;
-  return isValidGameId(id) ? id : DEFAULT_GAME_ID;
+  return DEFAULT_GAME_ID;
 }
 
 export function getActiveGameData() {
@@ -434,7 +435,7 @@ export function getActiveGameData() {
 }
 
 export async function setActiveGame(gameId) {
-  if (!isValidGameId(gameId)) {
+  if (gameId !== DEFAULT_GAME_ID || !isValidGameId(gameId)) {
     throw Object.assign(new Error("invalid game"), { status: 400 });
   }
   db.data.session ||= { activeGame: DEFAULT_GAME_ID };
@@ -455,9 +456,7 @@ export async function initDb() {
   }
 
   db.data.session ||= { activeGame: DEFAULT_GAME_ID };
-  if (!isValidGameId(db.data.session.activeGame)) {
-    db.data.session.activeGame = DEFAULT_GAME_ID;
-  }
+  db.data.session.activeGame = DEFAULT_GAME_ID; // Riftbound-only build
 
   db.data.games ||= {};
   for (const game of listGames()) {

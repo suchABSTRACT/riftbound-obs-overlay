@@ -1390,9 +1390,6 @@ reload()
   .then(() => buildLayoutEditor())
   .catch((err) => toast("Failed to load: " + err.message, "err"));
 
-document.getElementById("change-game")?.addEventListener("click", () => {
-  window.location.href = "/home";
-});
 
 // ---- In-app updates (Windows portable / installer) ------------------------
 
