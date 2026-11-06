@@ -182,7 +182,7 @@ export async function setRecord(player, record) {
 
 export async function applyLayoutPreset(name) {
   const layout = layoutPreset(name);
-  if (!layout) throw bad("preset must be classic or broadcast");
+  if (!layout) throw bad("preset must be broadcast");
   activeGameData().layout = layout;
   await persistAndBroadcast(["layout"]);
   return layout;

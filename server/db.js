@@ -110,7 +110,12 @@ function splitLegendGroups(layout) {
   }
 }
 
-function defaultLayout() {
+/**
+ * Every layout block with a sensible spot. Only the broadcast blocks are shown
+ * by default (see broadcastLayout); the others (names, legend / battlefield
+ * cards, camera frame, series tally…) stay available in the Layout tab.
+ */
+function allBlocks() {
   return {
     "p1.pseudo": { x: 2, y: 10.2, width: 11, height: 5, visible: true, fontSize: 3.2, align: "center", color: "#ffffff" },
     "p2.pseudo": { x: 86.83477740719258, y: 10.257199020366073, width: 11, height: 5, visible: true, fontSize: 3.2, align: "center", color: "#ffffff" },
@@ -134,7 +139,6 @@ function defaultLayout() {
     "p2.card": { x: 87.01404799883991, y: 63.1, width: 11, height: 27.3, visible: true },
     "p1.champion": { x: 2, y: 86.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#dce6f5" },
     "p2.champion": { x: 82, y: 62.2, width: 16, height: 5, visible: false, fontSize: 2.4, align: "center", color: "#dce6f5" },
-    // Broadcast blocks (hidden in the classic layout; see broadcastLayout()).
     ...BROADCAST_BLOCKS_HIDDEN(),
   };
 }
@@ -156,12 +160,12 @@ function BROADCAST_BLOCKS_HIDDEN() {
 }
 
 /**
- * Broadcast preset: full-screen table cam (no background scene), player panels
+ * The layout: full-screen table cam (no background scene), player panels
  * in the top corners, scoreboard + clock top centre, rune tracks, and the
  * on-demand cards as large spotlights in the bottom corners.
  */
 function broadcastLayout() {
-  const layout = defaultLayout();
+  const layout = allBlocks();
   for (const cfg of Object.values(layout)) cfg.visible = false;
   for (const [k, v] of Object.entries(BROADCAST_BLOCKS)) layout[k] = { ...v, visible: true };
   const cardW = 16;
@@ -171,14 +175,15 @@ function broadcastLayout() {
   return layout;
 }
 
-const LAYOUT_PRESETS = { classic: () => defaultLayout(), broadcast: () => broadcastLayout() };
+const LAYOUT_PRESETS = { broadcast: () => broadcastLayout() };
+const defaultLayout = broadcastLayout;
 
 export function layoutPreset(name) {
   return LAYOUT_PRESETS[name]?.() || null;
 }
 
 export function defaultLayoutForGame(gameId = DEFAULT_GAME_ID) {
-  return defaultLayout();
+  return broadcastLayout();
 }
 
 export function defaultGameData(gameId = DEFAULT_GAME_ID) {
@@ -330,6 +335,13 @@ function backfillGameData(gameData, gameId = DEFAULT_GAME_ID) {
   for (const slot of RETIRED_SLOTS) delete gameData.layout?.[slot];
   // Broadcast blocks were redesigned: move them to the new default spots once,
   // keeping whether the broadcast layout is in use (rune tracks follow panels).
+  // The classic layout was retired: anyone still on it moves to broadcast once.
+  if (!gameData.classicRetired && gameData.layout) {
+    const onBroadcast = gameData.layout["p1.panel"]?.visible === true || gameData.layout.scoreboard?.visible === true;
+    if (!onBroadcast) gameData.layout = broadcastLayout();
+    gameData.classicRetired = true;
+    gameData.broadcastLayoutVersion = BROADCAST_LAYOUT_VERSION;
+  }
   if ((gameData.broadcastLayoutVersion ?? 1) < BROADCAST_LAYOUT_VERSION && gameData.layout) {
     const using = gameData.layout["p1.panel"]?.visible === true || gameData.layout.scoreboard?.visible === true;
     for (const [k, v] of Object.entries(BROADCAST_BLOCKS)) {

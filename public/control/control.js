@@ -1170,25 +1170,6 @@ document.getElementById("save-layout").addEventListener("click", async () => {
   }
 });
 
-document.querySelectorAll("[data-preset]").forEach((btn) =>
-  btn.addEventListener("click", async () => {
-    const name = btn.dataset.preset;
-    const ok = await confirmDialog("Your current block positions will be replaced.", {
-      title: `Switch to the ${btn.textContent} layout?`,
-      ok: "Switch layout",
-    });
-    if (!ok) return;
-    try {
-      await api("/api/layout/preset", { method: "POST", body: { name } });
-      await reload();
-      buildLayoutEditor();
-      toast(`${btn.textContent} layout applied`);
-    } catch (err) {
-      toast("Error: " + err.message, "err");
-    }
-  })
-);
-
 function renderBlockList() {
   const list = document.getElementById("layout-block-list");
   if (!list || !data?.layout) return;
@@ -1219,6 +1200,11 @@ document.getElementById("layout-block-list")?.addEventListener("click", (e) => {
 });
 
 document.getElementById("reset-layout").addEventListener("click", async () => {
+  const ok = await confirmDialog("All blocks go back to their default spots.", {
+    title: "Reset the layout?",
+    ok: "Reset layout",
+  });
+  if (!ok) return;
   await api("/api/layout/reset", { method: "POST" });
   await reload();
   buildLayoutEditor();
