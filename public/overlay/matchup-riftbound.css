@@ -213,12 +213,55 @@
   bottom: 0;
   height: calc(var(--p) * 292);
   aspect-ratio: 744 / 1039;
+  /* hover timing (each card on its own clock so they never move together) */
+  --fdur: 4.2s;
+  --fdel: 1.9s;
+}
+/* The card itself; floats inside .mx-card so the hover never fights the
+   entrance animation or the tilt on the outer box. */
+.mx-cf {
+  position: absolute;
+  inset: 0;
   padding: max(1px, calc(var(--p) * 1.5));
   border-radius: calc(var(--p) * 10);
   background: var(--metal);
   box-shadow: 0 calc(var(--p) * 14) calc(var(--p) * 30) rgba(0, 0, 0, 0.6);
+  animation: mx-hover var(--fdur) ease-in-out var(--fdel) infinite;
+  will-change: translate, rotate;
 }
-.mx-card img {
+/* Soft shadow on the "table" that tightens as the card lifts. */
+.mx-card::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: calc(var(--p) * -22);
+  height: calc(var(--p) * 22);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  animation: mx-hover-shadow var(--fdur) ease-in-out var(--fdel) infinite;
+}
+.mx-card-champion {
+  --fdur: 4.9s;
+  --fdel: 2.6s;
+}
+.mx-hand-r .mx-card-legend {
+  --fdur: 4.5s;
+  --fdel: 2.25s;
+}
+.mx-hand-r .mx-card-champion {
+  --fdur: 5.2s;
+  --fdel: 3.1s;
+}
+@keyframes mx-hover {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 0 calc(var(--p) * -12); rotate: 0.8deg; }
+}
+@keyframes mx-hover-shadow {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  50% { transform: scaleX(0.82); opacity: 0.55; }
+}
+.mx-cf img {
   display: block;
   width: 100%;
   height: 100%;

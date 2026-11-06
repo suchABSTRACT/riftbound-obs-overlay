@@ -1,7 +1,7 @@
 // Broadcast overlay blocks in the "Filigree" style (canvas round 5):
 // player panels (first/second, legend + champion art, XP, legend + champion
 // names, hand size), rune pool (segments in domain colours), and the scoreboard
-// (grain name plates, centre counter with games won / round / clock, and a tray
+// (grain name plates, centre counter with game points / round / clock, and a tray
 // of game-result slots). Each block is a layout slot; styles scale with it.
 
 import { artStyle, framingFor } from "/shared/artFraming.js";
@@ -126,7 +126,9 @@ function resultsHtml(state) {
 
 function scoreboardHtml(state) {
   const b = bc(state);
-  const won = state.match?.score || { p1: 0, p2: 0 };
+  // Points in the game being played (games won show in the result slots
+  // below); once the match is over, the final games score.
+  const won = (state.match?.winner ? state.match?.score : state.game?.score) || { p1: 0, p2: 0 };
   const fmt = String(state.match?.format || "bo3").replace(/^bo/i, "Bo");
   const tab = state.match?.winner ? `Final · ${fmt}` : `Game ${(state.match?.currentGame ?? 0) + 1} · ${fmt}`;
   const plate = (i) => {

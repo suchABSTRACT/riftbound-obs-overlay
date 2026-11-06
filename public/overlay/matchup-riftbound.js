@@ -74,8 +74,8 @@ function handInner(state, i, animate = true) {
   const champ = imgOf(championFor(state, pid, i));
   const a = (d) => (animate ? anim(`mx-a-card-${side}`, d, 0.9) : "mp-item mp-settled");
   return `
-    ${legend ? `<div class="mx-card mx-card-legend ${a(T.legend)}"><img src="${legend}" alt="" /><span class="mx-card-tag">Legend</span></div>` : ""}
-    ${champ ? `<div class="mx-card mx-card-champion ${a(T.champion)}" data-mx="champ-${i}"><img src="${champ}" alt="" /><span class="mx-card-tag">Champion</span></div>` : ""}`;
+    ${legend ? `<div class="mx-card mx-card-legend ${a(T.legend)}"><div class="mx-cf"><img src="${legend}" alt="" /><span class="mx-card-tag">Legend</span></div></div>` : ""}
+    ${champ ? `<div class="mx-card mx-card-champion ${a(T.champion)}" data-mx="champ-${i}"><div class="mx-cf"><img src="${champ}" alt="" /><span class="mx-card-tag">Champion</span></div></div>` : ""}`;
 }
 
 // ---- battlefield strip ------------------------------------------------------------
@@ -185,7 +185,7 @@ export function mxUpdate(root, state) {
     const next = imgOf(championFor(state, PIDS[i], i));
     if (champImg && next && champImg.getAttribute("src") !== next) {
       champImg.src = next;
-      flash(champImg.parentElement);
+      flash(champImg.closest(".mx-card")); // outer box: the inner one keeps hovering
     } else if (!champImg && next) {
       const hand = root.querySelector(`[data-mx="hand-${i}"]`);
       if (hand) hand.innerHTML = handInner(state, i, false);
