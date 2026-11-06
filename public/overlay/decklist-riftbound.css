@@ -67,14 +67,33 @@
   top: calc(var(--p) * 60);
   width: calc(var(--p) * 240);
   aspect-ratio: 744 / 1039;
+  transform: rotate(var(--rot));
+  z-index: 2;
+}
+/* The card floats inside .dl-ch (same hover as the matchup cards), so it
+   never fights the entrance animation or the tilt. */
+.dl-cf {
+  position: absolute;
+  inset: 0;
   padding: max(1px, calc(var(--p) * 1.5));
   border-radius: calc(var(--p) * 10);
   background: var(--metal);
-  transform: rotate(var(--rot));
   box-shadow: 0 calc(var(--p) * 18) calc(var(--p) * 40) rgba(0, 0, 0, 0.65);
-  z-index: 2;
+  animation: mx-hover 4.4s ease-in-out 1.9s infinite;
+  will-change: translate, rotate;
 }
-.dl-ch img {
+.dl-ch::before {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: calc(var(--p) * -26);
+  height: calc(var(--p) * 24);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  animation: mx-hover-shadow 4.4s ease-in-out 1.9s infinite;
+}
+.dl-cf img {
   width: 100%;
   height: 100%;
   object-fit: cover;

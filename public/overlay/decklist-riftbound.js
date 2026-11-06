@@ -131,7 +131,7 @@ function bodyHtml(state) {
 
   return `
     <div class="dl-art ${a("mx-a-fade", 0, 0.8)}">${spotArtHtml(legend, state.display?.broadcast?.framing)}</div>
-    ${champ && big(champ) ? `<div class="dl-ch ${a("dl-a-card", 350, 0.9)}"><img src="${big(champ)}" alt="" /></div>` : ""}
+    ${champ && big(champ) ? `<div class="dl-ch ${a("dl-a-card", 350, 0.9)}"><div class="dl-cf"><img src="${big(champ)}" alt="" /></div></div>` : ""}
     <div class="dl-id ${a("mx-a-rise", 200, 0.7)}" data-dl="id">
       <span class="dl-k">Decklist</span>
       <span class="dl-n" data-dl="name">${esc(player.pseudo || "")}</span>
