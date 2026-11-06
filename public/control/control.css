@@ -1051,10 +1051,14 @@ select:focus {
   text-transform: capitalize;
   font-weight: 600;
 }
-.bcx-rune-name i {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+.bcx-rune-name .dom-ic {
+  width: 20px;
+  height: 20px;
+}
+.bcx-rune-name .dom-unknown {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
   background: var(--c);
 }
 .bcx-rune-lbl {

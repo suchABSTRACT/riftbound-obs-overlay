@@ -12,14 +12,8 @@ const esc = (s) =>
 const img = (card) => card?.imageLocal || card?.thumbLocal || "";
 
 // Riftbound domain colours for rune segments.
-export const DOMAIN_COLORS = {
-  fury: "#e0483a",
-  calm: "#3fb46d",
-  mind: "#3e8ff0",
-  body: "#ee8b2b",
-  chaos: "#9a5ee6",
-  order: "#e9c43c",
-};
+export { DOMAIN_COLORS } from "/shared/domains.js";
+import { DOMAIN_COLORS, domainIcon } from "/shared/domains.js";
 
 const HAND_ICON =
   '<svg aria-hidden="true" viewBox="0 0 20 20" class="ic"><rect x="3" y="5" width="8" height="12" rx="1"/><path d="M8 3.5l7.6 1.6-2.3 11.3"/></svg>';
@@ -105,7 +99,10 @@ function runesHtml(state, i) {
     .map((s) => `<i class="seg ${s.on ? "on" : "off"}" style="--c:${DOMAIN_COLORS[s.domain] || "#8a93b3"}"></i>`)
     .join("");
   const empty = '<i class="seg empty"></i>'.repeat(Math.max(0, 12 - Math.min(12, segs.length)));
-  return `<div class="bx bx-rn"><div class="rn rn-seg rn-${side}"><span class="rn-n">${RUNE_ICON}<b>${ready}</b>/${total}</span><span class="rn-row">${cells}${empty}</span></div></div>`;
+  // The player's domain icons (their Legend's two domains) in place of a generic rune.
+  const doms = (state.players?.[i]?.runeDomains || []).slice(0, 2);
+  const icon = doms.length ? `<span class="rn-doms">${doms.map((d) => domainIcon(d)).join("")}</span>` : RUNE_ICON;
+  return `<div class="bx bx-rn"><div class="rn rn-seg rn-${side}"><span class="rn-n">${icon}<b>${ready}</b>/${total}</span><span class="rn-row">${cells}${empty}</span></div></div>`;
 }
 
 // ---- scoreboard --------------------------------------------------------------------------

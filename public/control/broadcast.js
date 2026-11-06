@@ -13,20 +13,14 @@ import {
   watchBfImgs,
 } from "/shared/artFraming.js";
 import { spotArtHtml, spotFraming } from "/overlay/decklist-riftbound.js";
+import { DOMAIN_COLORS, domainIcon } from "/shared/domains.js";
 
 const STAT_ROWS = [
   { key: "hand", label: "Hand", show: "hand" },
   { key: "level", label: "XP", show: "level" },
 ];
 
-const DOMAIN_COLORS = {
-  fury: "#e0483a",
-  calm: "#3fb46d",
-  mind: "#3e8ff0",
-  body: "#ee8b2b",
-  chaos: "#9a5ee6",
-  order: "#e9c43c",
-};
+// Domain colours + icons are shared with the overlay.
 
 const SHOW_LABELS = {
   first: "First / second",
@@ -127,7 +121,7 @@ function runeBlock(pid) {
     .map(
       (d) => `
       <div class="bcx-rune" style="--c:${DOMAIN_COLORS[d] || "#8a93b3"}">
-        <span class="bcx-rune-name"><i></i>${d}</span>
+        <span class="bcx-rune-name">${domainIcon(d)}${d}</span>
         <span class="bcx-rune-lbl">On board</span>
         <div class="stepper">
           <button type="button" data-bcx-rune="${pid}:${d}:total:-1" aria-label="${d} on board minus">−</button>

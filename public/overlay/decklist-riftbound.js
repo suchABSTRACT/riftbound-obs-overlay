@@ -9,7 +9,8 @@
 //           "Decklist sideboard" show-toggle turns off.
 // Laid out in design pixels at 1920×1080; --p scales it to the source size.
 
-import { DOMAIN_COLORS, fils, shape } from "./broadcast-panels.js";
+import { fils, shape } from "./broadcast-panels.js";
+import { domainIcon } from "/shared/domains.js";
 import { bfFramingFor, bfImgHtml, fitAllBfImgs, watchBfImgs } from "/shared/artFraming.js";
 
 const esc = (s) =>
@@ -93,7 +94,7 @@ function runesHtml(runes = []) {
   return runes
     .map(
       (r) =>
-        `<span class="dl-rn" style="--c:${DOMAIN_COLORS[r.domain] || "#8a93b3"}"><i><b></b></i>×${r.count}</span>`
+        `<span class="dl-rn">${domainIcon(r.domain)}×${r.count}</span>`
     )
     .join("");
 }

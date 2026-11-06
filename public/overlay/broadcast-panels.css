@@ -148,3 +148,10 @@
 .bx .tp.done{opacity:.35}
 .bx .tp.now{color:#fff;background:var(--c);box-shadow:0 0 calc(var(--p)*10) var(--c);transform:scale(1.15)}
 .bx .turns.over{border-color:#8a2030;box-shadow:none}
+
+/* ---- domain icons (rune bars) ---- */
+.bx .rn-doms{display:flex;align-self:center;margin-right:calc(var(--p)*3)}
+.bx .rn-doms .dom-ic{width:calc(var(--p)*20);height:calc(var(--p)*20);border-radius:50%;box-shadow:0 0 0 max(1px,calc(var(--p)*1)) var(--gold-2)}
+.bx .rn-doms .dom-ic+.dom-ic{margin-left:calc(var(--p)*-4)}
+.dom-ic{display:inline-block;object-fit:contain}
+.dom-unknown{border-radius:50%;background:#8a93b3}
