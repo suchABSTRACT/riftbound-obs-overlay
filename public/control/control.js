@@ -18,6 +18,7 @@ import { clamp, cssEscape, escapeAttr, escapeHtml } from "./utils.js";
 import { reloadData, startStateSocket, subscribeData } from "./state.js";
 import { initBroadcast, renderBroadcast, update as updateBroadcast } from "./broadcast.js";
 import { confirmDialog } from "./dialog.js";
+import { championChoices } from "/shared/champions.js";
 
 function getSlotLabel(slotId) {
   return SLOT_LABELS[slotId] || slotId;
@@ -514,7 +515,11 @@ function renderSelections() {
       p.deck.battlefields.map((e) => e.id),
       game.battlefield[id]
     );
-    const champOptions = optionList(p.deck.champions || [], game.champion[id]);
+    // Every version of their champion in the deck or sideboard (they may swap
+    // between games); keep the current pick listed even if it's from elsewhere.
+    const champIds = championChoices(p.deck, data.cardsCache || {});
+    if (game.champion[id] && !champIds.includes(game.champion[id])) champIds.push(game.champion[id]);
+    const champOptions = optionList(champIds, game.champion[id]);
 
     block.innerHTML = `
       <h2>${escapeHtml(playerName(id))} — Game ${gi + 1}</h2>

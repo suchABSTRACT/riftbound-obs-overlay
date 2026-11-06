@@ -8,6 +8,7 @@ import { warmSpotlightArt } from "../legendArt.js";
 import { activeGameData, persistAndBroadcast } from "./stateService.js";
 import { prefillChampion } from "./matchService.js";
 import { requirePlayer } from "./playerService.js";
+import { championChoices } from "../../public/shared/champions.js";
 
 export async function previewDecklist({ format, text }) {
   if (format === "tts") {
@@ -43,7 +44,8 @@ function dropStalePicks(playerId, deck) {
     ...["battlefields", "maindeck", "sideboard", "runes"].flatMap((k) => (deck[k] || []).map((e) => e.id)),
   ]);
   const battlefields = new Set((deck.battlefields || []).map((e) => e.id));
-  const champions = new Set(deck.champions || []);
+  // Any version of their champion in the deck or sideboard stays a valid pick.
+  const champions = new Set(championChoices(deck, gameData.cardsCache || {}));
   for (const g of gameData.match?.games || []) {
     if (g.battlefield?.[playerId] && !battlefields.has(g.battlefield[playerId])) g.battlefield[playerId] = null;
     if (g.champion?.[playerId] && !champions.has(g.champion[playerId])) {
